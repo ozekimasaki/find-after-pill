@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#EBF6FC"/>
+      <stop offset="100%" style="stop-color:#FFFFFF"/>
+    </linearGradient>
+    <linearGradient id="pillGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#65BBE9"/>
+      <stop offset="100%" style="stop-color:#4AA8D9"/>
+    </linearGradient>
+  </defs>
+  
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <circle cx="100" cy="100" r="150" fill="#65BBE9" opacity="0.1"/>
+  <circle cx="1100" cy="530" r="200" fill="#65BBE9" opacity="0.1"/>
+  <circle cx="900" cy="100" r="100" fill="#65BBE9" opacity="0.08"/>
+  
+  <g transform="translate(200,315)">
+    <circle cx="0" cy="0" r="80" fill="url(#pillGradient)"/>
+    <g transform="rotate(-30)">
+      <rect x="-45" y="-18" width="90" height="36" rx="18" ry="18" fill="white"/>
+      <line x1="0" y1="-18" x2="0" y2="18" stroke="#65BBE9" stroke-width="3"/>
+      <path d="M-45,0 a18,18 0 0,1 18,-18 h27 v36 h-27 a18,18 0 0,1 -18,-18" fill="#EBF6FC"/>
+    </g>
+    <g transform="translate(55,-45)">
+      <circle cx="0" cy="0" r="20" fill="white"/>
+      <rect x="-10" y="-3" width="20" height="6" rx="2" fill="#65BBE9"/>
+      <rect x="-3" y="-10" width="6" height="20" rx="2" fill="#65BBE9"/>
+    </g>
+  </g>
+  
+  <text x="350" y="280" font-family="sans-serif" font-size="72" font-weight="bold" fill="#333333">???????</text>
+  <text x="350" y="370" font-family="sans-serif" font-size="48" font-weight="bold" fill="#65BBE9">??????</text>
+  
+  <text x="350" y="440" font-family="sans-serif" font-size="28" fill="#666666">?????????????????</text>
+  
+  <text x="350" y="520" font-family="sans-serif" font-size="24" fill="#4AA8D9">find-after-pill.com</text>
+  
+  <rect x="0" y="610" width="1200" height="20" fill="url(#pillGradient)"/>
+</svg>

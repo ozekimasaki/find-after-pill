@@ -1,5 +1,5 @@
 {
-  "name": "norlevo-portal",
+  "name": "ec-pill-navi",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "deploy": "vite build && wrangler deploy",
     "cf-typegen": "wrangler types",
-    "fetch-data": "tsx scripts/fetch-data.ts"
+    "fetch-data": "tsx scripts/fetch-data.ts",
+    "generate-ogp": "tsx scripts/generate-ogp.ts"
   },
   "dependencies": {
     "cheerio": "^1.1.2",
@@ -34,6 +35,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4.1.18",
     "tsx": "^4.21.0",
     "typescript": "~5.9.3",

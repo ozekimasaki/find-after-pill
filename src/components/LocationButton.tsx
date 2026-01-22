@@ -11,7 +11,7 @@ export function LocationButton({ onClick, loading, hasLocation, onClear }: Locat
       <div className="flex gap-2">
         <button
           onClick={onClick}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#65BBE9] text-white rounded-lg hover:bg-[#4AA8D9] transition-colors"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -36,7 +36,7 @@ export function LocationButton({ onClick, loading, hasLocation, onClear }: Locat
     <button
       onClick={onClick}
       disabled={loading}
-      className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-pink-500 text-pink-500 rounded-lg hover:bg-pink-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-[#65BBE9] text-[#65BBE9] rounded-lg hover:bg-[#EBF6FC] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {loading ? (
         <>

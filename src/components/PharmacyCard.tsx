@@ -17,7 +17,7 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
       <div className="flex justify-between items-start gap-2">
         <h3 className="font-bold text-gray-900 text-lg leading-tight">{pharmacy.name}</h3>
         {pharmacy.distance !== undefined && (
-          <span className="flex-shrink-0 px-2 py-1 bg-pink-100 text-pink-700 text-sm font-medium rounded">
+          <span className="flex-shrink-0 px-2 py-1 bg-[#EBF6FC] text-[#4AA8D9] text-sm font-medium rounded">
             {formatDistance(pharmacy.distance)}
           </span>
         )}
@@ -30,7 +30,7 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
           <a
             href={`tel:${pharmacy.phone}`}
             onClick={(e) => e.stopPropagation()}
-            className="text-pink-600 hover:text-pink-700 hover:underline"
+            className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline"
           >
             {pharmacy.phone}
           </a>
@@ -56,7 +56,7 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
           </span>
         )}
         {pharmacy.pharmacistFemale !== undefined && pharmacy.pharmacistFemale > 0 && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-pink-50 text-pink-700 rounded">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-[#EBF6FC] text-[#4AA8D9] rounded">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
@@ -91,7 +91,7 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
           <a
             href={`tel:${pharmacy.phone}`}
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-white bg-pink-500 rounded hover:bg-pink-600 transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-white bg-[#65BBE9] rounded hover:bg-[#4AA8D9] transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />

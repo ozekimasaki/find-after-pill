@@ -86,7 +86,7 @@ function App() {
             onClick={() => setViewMode('list')}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
               viewMode === 'list'
-                ? 'bg-pink-500 text-white'
+                ? 'bg-[#65BBE9] text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >
@@ -101,7 +101,7 @@ function App() {
             onClick={() => setViewMode('map')}
             className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
               viewMode === 'map'
-                ? 'bg-pink-500 text-white'
+                ? 'bg-[#65BBE9] text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >

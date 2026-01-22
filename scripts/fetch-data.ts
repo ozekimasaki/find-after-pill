@@ -11,6 +11,69 @@ import * as path from 'path';
 const MHLW_PAGE_URL = 'https://www.mhlw.go.jp/stf/kinnkyuuhininnyaku_00005.html';
 const GSI_GEOCODE_API = 'https://msearch.gsi.go.jp/address-search/AddressSearch';
 
+/**
+ * 都道府県ごとの緯度範囲（大まかな値）
+ * ジオコーディング結果の妥当性検証に使用
+ */
+const PREFECTURE_LAT_RANGES: Record<string, [number, number]> = {
+  '北海道': [41.3, 45.6],
+  '青森県': [40.2, 41.6],
+  '岩手県': [38.7, 40.5],
+  '宮城県': [37.8, 39.0],
+  '秋田県': [39.0, 40.5],
+  '山形県': [37.7, 39.2],
+  '福島県': [36.8, 37.9],
+  '茨城県': [35.7, 36.9],
+  '栃木県': [36.2, 37.2],
+  '群馬県': [36.0, 37.1],
+  '埼玉県': [35.7, 36.3],
+  '千葉県': [34.9, 36.0],
+  '東京都': [35.5, 35.9],
+  '神奈川県': [35.1, 35.7],
+  '新潟県': [37.0, 38.6],
+  '富山県': [36.3, 36.9],
+  '石川県': [36.1, 37.5],
+  '福井県': [35.4, 36.3],
+  '山梨県': [35.2, 35.9],
+  '長野県': [35.2, 37.0],
+  '岐阜県': [35.1, 36.5],
+  '静岡県': [34.6, 35.6],
+  '愛知県': [34.6, 35.4],
+  '三重県': [33.7, 35.2],
+  '滋賀県': [34.8, 35.7],
+  '京都府': [34.7, 35.8],
+  '大阪府': [34.3, 35.0],
+  '兵庫県': [34.2, 35.7],
+  '奈良県': [33.9, 34.8],
+  '和歌山県': [33.4, 34.4],
+  '鳥取県': [35.1, 35.6],
+  '島根県': [34.3, 36.3],
+  '岡山県': [34.4, 35.3],
+  '広島県': [34.0, 35.1],
+  '山口県': [33.7, 34.8],
+  '徳島県': [33.7, 34.3],
+  '香川県': [34.1, 34.5],
+  '愛媛県': [32.9, 34.1],
+  '高知県': [32.7, 33.9],
+  '福岡県': [33.0, 33.9],
+  '佐賀県': [33.0, 33.6],
+  '長崎県': [32.5, 34.7],
+  '熊本県': [32.0, 33.2],
+  '大分県': [32.7, 33.8],
+  '宮崎県': [31.4, 32.9],
+  '鹿児島県': [27.0, 32.3],
+  '沖縄県': [24.0, 27.9],
+};
+
+/**
+ * 座標が都道府県の緯度範囲内かチェック
+ */
+function isCoordInPrefecture(lat: number, prefecture: string): boolean {
+  const range = PREFECTURE_LAT_RANGES[prefecture];
+  if (!range) return true; // 範囲が定義されていない場合はスキップ
+  return lat >= range[0] && lat <= range[1];
+}
+
 interface Pharmacy {
   id: string;
   pharmacyNumber?: string;
@@ -293,6 +356,16 @@ async function main() {
         }
       }
 
+      // 住所が都道府県名で始まっていない場合、prefectureを先頭に追加
+      let finalAddress = address;
+      if (finalPrefecture && !address.startsWith(finalPrefecture)) {
+        // 住所が「県」「府」「都」「道」で始まっていない場合
+        const prefixPattern = /^(北海道|東京都|大阪府|京都府|.{2,3}県)/;
+        if (!prefixPattern.test(address)) {
+          finalAddress = finalPrefecture + address;
+        }
+      }
+
       // 薬剤師数をパース（数値に変換）
       const parseCount = (str: string): number | undefined => {
         const num = parseInt(str, 10);
@@ -304,7 +377,7 @@ async function main() {
         pharmacyNumber: pharmacyNumber || undefined,
         prefecture: finalPrefecture,
         name,
-        address,
+        address: finalAddress,
         phone: formatPhoneNumber(phone),
         lat: null,
         lng: null,
@@ -329,11 +402,20 @@ async function main() {
     const geocodeLimit = geocodeAll ? pharmacies.length : Math.min(500, pharmacies.length);
     console.log(`ジオコーディング中（${geocodeAll ? '全件' : '最初の500件'}）...`);
     
+    let invalidCoordCount = 0;
     for (let i = 0; i < geocodeLimit; i++) {
-      const coords = await geocodeAddress(pharmacies[i].address);
+      const pharmacy = pharmacies[i];
+      const coords = await geocodeAddress(pharmacy.address);
       if (coords) {
-        pharmacies[i].lat = coords.lat;
-        pharmacies[i].lng = coords.lng;
+        // 座標が都道府県の範囲内かチェック
+        if (isCoordInPrefecture(coords.lat, pharmacy.prefecture)) {
+          pharmacy.lat = coords.lat;
+          pharmacy.lng = coords.lng;
+        } else {
+          // 座標が都道府県の範囲外の場合は無効とする
+          console.warn(`座標が都道府県の範囲外: ${pharmacy.name} (${pharmacy.prefecture}) - lat: ${coords.lat}`);
+          invalidCoordCount++;
+        }
       }
       
       if ((i + 1) % 50 === 0) {
@@ -346,6 +428,9 @@ async function main() {
 
     const geocodedCount = pharmacies.filter(p => p.lat !== null).length;
     console.log(`${geocodedCount}件のジオコーディングが成功しました`);
+    if (invalidCoordCount > 0) {
+      console.log(`${invalidCoordCount}件の座標が都道府県の範囲外のため無効化されました`);
+    }
 
     // JSONファイルを保存
     const outputDir = path.join(process.cwd(), 'public', 'data');

@@ -5,8 +5,9 @@
 
 /* Custom styles */
 :root {
-  --primary-color: #ec4899;
-  --primary-dark: #db2777;
+  --primary-color: #65BBE9;
+  --primary-dark: #4AA8D9;
+  --primary-light: #EBF6FC;
 }
 
 body {
