@@ -1,9 +1,9 @@
 name: Update Pharmacy Data
 
-on:
+"on":
   schedule:
     # 毎日 UTC 21:00 (日本時間 6:00) に実行
-    - cron: '0 21 * * *'
+    - cron: '1 21 * * *'
   workflow_dispatch: # 手動実行も可能
 
 jobs:
