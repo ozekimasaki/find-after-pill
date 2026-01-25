@@ -48,7 +48,6 @@ const userLocationIcon = new L.DivIcon({
 interface MapProps {
   pharmacies: PharmacyWithDistance[];
   userLocation?: GeoLocation | null;
-  onPharmacyClick?: (pharmacy: PharmacyWithDistance) => void;
 }
 
 // 地図の中心を更新するコンポーネント
@@ -66,7 +65,7 @@ function MapUpdater({ center, zoom }: { center: [number, number]; zoom: number }
   return null;
 }
 
-export function Map({ pharmacies, userLocation, onPharmacyClick }: MapProps) {
+export function Map({ pharmacies, userLocation }: MapProps) {
   // 座標のある薬局のみ
   const mappablePharmacies = pharmacies.filter(p => p.lat !== null && p.lng !== null);
 
@@ -131,9 +130,6 @@ export function Map({ pharmacies, userLocation, onPharmacyClick }: MapProps) {
           key={pharmacy.id}
           position={[pharmacy.lat!, pharmacy.lng!]}
           icon={pharmacyIcon}
-          eventHandlers={{
-            click: () => onPharmacyClick?.(pharmacy),
-          }}
         >
           <Popup>
             <div className="min-w-[200px]">

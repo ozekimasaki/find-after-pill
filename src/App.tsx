@@ -6,16 +6,13 @@ import { PrefectureFilter } from './components/PrefectureFilter';
 import { LocationButton } from './components/LocationButton';
 import { PharmacyList } from './components/PharmacyList';
 import { Map } from './components/Map';
-import { PharmacyDetail } from './components/PharmacyDetail';
 import { useGeolocation } from './hooks/useGeolocation';
 import { usePharmacies } from './hooks/usePharmacies';
-import type { PharmacyWithDistance } from './types/pharmacy';
 
 type ViewMode = 'list' | 'map';
 
 function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [selectedPharmacy, setSelectedPharmacy] = useState<PharmacyWithDistance | null>(null);
 
   const {
     location: userLocation,
@@ -42,10 +39,6 @@ function App() {
   const handlePrefectureChange = useCallback((prefecture: string) => {
     setSearchParams({ prefecture: prefecture || undefined });
   }, [setSearchParams]);
-
-  const handlePharmacyClick = useCallback((pharmacy: PharmacyWithDistance) => {
-    setSelectedPharmacy(pharmacy);
-  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -126,18 +119,10 @@ function App() {
             <Map
               pharmacies={pharmacies}
               userLocation={userLocation}
-              onPharmacyClick={handlePharmacyClick}
             />
           </div>
         )}
 
-        {/* 詳細モーダル（地図から選択時） */}
-        {selectedPharmacy && viewMode === 'map' && (
-          <PharmacyDetail
-            pharmacy={selectedPharmacy}
-            onClose={() => setSelectedPharmacy(null)}
-          />
-        )}
       </main>
 
       <Footer />
