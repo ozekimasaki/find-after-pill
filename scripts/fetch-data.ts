@@ -401,29 +401,38 @@ async function main() {
     const geocodeAll = process.env.GEOCODE_ALL === 'true';
     const geocodeLimit = geocodeAll ? pharmacies.length : Math.min(500, pharmacies.length);
     console.log(`ジオコーディング中（${geocodeAll ? '全件' : '最初の500件'}）...`);
-    
+
+    // 並列処理（レート制限対策: 同時10件、100ms間隔）
+    const CONCURRENCY = 10;
+    const DELAY_MS = 100;
     let invalidCoordCount = 0;
-    for (let i = 0; i < geocodeLimit; i++) {
-      const pharmacy = pharmacies[i];
+    let processedCount = 0;
+
+    const geocodeWithDelay = async (pharmacy: Pharmacy, delay: number): Promise<void> => {
+      await new Promise(resolve => setTimeout(resolve, delay));
       const coords = await geocodeAddress(pharmacy.address);
       if (coords) {
-        // 座標が都道府県の範囲内かチェック
         if (isCoordInPrefecture(coords.lat, pharmacy.prefecture)) {
           pharmacy.lat = coords.lat;
           pharmacy.lng = coords.lng;
         } else {
-          // 座標が都道府県の範囲外の場合は無効とする
           console.warn(`座標が都道府県の範囲外: ${pharmacy.name} (${pharmacy.prefecture}) - lat: ${coords.lat}`);
           invalidCoordCount++;
         }
       }
-      
-      if ((i + 1) % 50 === 0) {
-        console.log(`  ${i + 1}/${geocodeLimit} 完了`);
+      processedCount++;
+      if (processedCount % 50 === 0) {
+        console.log(`  ${processedCount}/${geocodeLimit} 完了`);
       }
-      
-      // レート制限対策
-      await new Promise(resolve => setTimeout(resolve, 100));
+    };
+
+    // バッチ処理で並列化
+    for (let i = 0; i < geocodeLimit; i += CONCURRENCY) {
+      const batch = pharmacies.slice(i, i + CONCURRENCY);
+      const batchPromises = batch.map((pharmacy, idx) =>
+        geocodeWithDelay(pharmacy, idx * DELAY_MS)
+      );
+      await Promise.all(batchPromises);
     }
 
     const geocodedCount = pharmacies.filter(p => p.lat !== null).length;
