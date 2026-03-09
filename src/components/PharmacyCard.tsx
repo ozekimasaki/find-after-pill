@@ -15,7 +15,14 @@ function formatShortHours(hours: string): string {
 }
 
 export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
-  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pharmacy.address)}`;
+  const getGoogleMapsRouteUrl = () => {
+    if (pharmacy.lat !== null && pharmacy.lng !== null) {
+      return `https://www.google.com/maps/dir/?api=1&destination=${pharmacy.lat},${pharmacy.lng}`;
+    }
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pharmacy.address)}`;
+  };
+
+  const googleMapsUrl = getGoogleMapsRouteUrl();
 
   return (
     <div
@@ -31,7 +38,15 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
         )}
       </div>
 
-      <p className="mt-2 text-gray-600 text-sm">{pharmacy.address}</p>
+      <a
+        href={googleMapsUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="mt-2 text-gray-600 text-sm hover:text-[#65BBE9] transition-colors block"
+      >
+        {pharmacy.address}
+      </a>
 
       {pharmacy.phone && (
         <p className="mt-1 text-gray-600 text-sm">
@@ -101,7 +116,7 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          地図で見る
+          ルートを調べる
         </a>
         <button
           onClick={onClick}

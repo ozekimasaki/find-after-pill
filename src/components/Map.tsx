@@ -90,6 +90,10 @@ function MarkerLayer({ pharmacies }: { pharmacies: PharmacyWithDistance[] }) {
       if (p.distance !== undefined) {
         popupContent += `<p style="font-size:0.875rem;color:#65BBE9;margin-top:4px">約 ${p.distance.toFixed(1)}km</p>`;
       }
+      const routeUrl = p.lat !== null && p.lng !== null
+        ? `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`
+        : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(p.address)}`;
+      popupContent += `<p style="margin-top:8px"><a href="${routeUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#f3f4f6;border-radius:6px;color:#374151;text-decoration:none;font-size:0.875rem"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>ルートを調べる</a></p>`;
       popupContent += `</div>`;
 
       marker.bindPopup(popupContent);

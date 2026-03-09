@@ -32,8 +32,22 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number | null>(null);
 
-  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pharmacy.address)}`;
-  const appleMapsUrl = `https://maps.apple.com/?q=${encodeURIComponent(pharmacy.address)}`;
+  const getGoogleMapsRouteUrl = () => {
+    if (pharmacy.lat !== null && pharmacy.lng !== null) {
+      return `https://www.google.com/maps/dir/?api=1&destination=${pharmacy.lat},${pharmacy.lng}`;
+    }
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pharmacy.address)}`;
+  };
+
+  const getAppleMapsRouteUrl = () => {
+    if (pharmacy.lat !== null && pharmacy.lng !== null) {
+      return `https://maps.apple.com/?daddr=${pharmacy.lat},${pharmacy.lng}&dirflg=d`;
+    }
+    return `https://maps.apple.com/?daddr=${encodeURIComponent(pharmacy.address)}&dirflg=d`;
+  };
+
+  const googleMapsUrl = getGoogleMapsRouteUrl();
+  const appleMapsUrl = getAppleMapsRouteUrl();
 
   const normalizeUrl = (url: string): string => {
     if (!url) return '';
@@ -145,7 +159,16 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
                 </svg>
               }
               label="住所"
-              value={pharmacy.address}
+              value={
+                <a
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline"
+                >
+                  {pharmacy.address}
+                </a>
+              }
             />
 
             {pharmacy.phone && (
