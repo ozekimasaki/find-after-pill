@@ -22,7 +22,7 @@ export interface Pharmacy {
   pharmacistFemale?: number;
   /** 男性薬剤師数 */
   pharmacistMale?: number;
-  /** 答えたくない薬剤師数 */
+  /** その他薬剤師数 */
   pharmacistOther?: number;
   /** ホームページURL */
   website?: string;
