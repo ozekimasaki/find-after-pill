@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { PharmacyWithDistance } from '../types/pharmacy';
 import { formatDistance } from '../utils/distance';
 
@@ -27,10 +28,13 @@ function DetailRow({ icon, label, value }: DetailRowProps) {
 }
 
 export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
+  const [copied, setCopied] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef<number | null>(null);
+
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pharmacy.address)}`;
   const appleMapsUrl = `https://maps.apple.com/?q=${encodeURIComponent(pharmacy.address)}`;
 
-  // URLを正規化
   const normalizeUrl = (url: string): string => {
     if (!url) return '';
     if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -39,16 +43,73 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
     return `https://${url}`;
   };
 
+  // Body scroll lock
+  useEffect(() => {
+    const original = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = original; };
+  }, []);
+
+  // Escape key to close
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  // Swipe down to close (mobile)
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (scrollRef.current && scrollRef.current.scrollTop === 0) {
+      touchStartY.current = e.touches[0].clientY;
+    } else {
+      touchStartY.current = null;
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartY.current !== null) {
+      const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+      if (deltaY > 80) {
+        onClose();
+      }
+    }
+    touchStartY.current = null;
+  }, [onClose]);
+
+  // Share / Copy
+  const handleShare = async () => {
+    const shareText = `${pharmacy.name}\n${pharmacy.address}\n${pharmacy.phone || ''}`.trim();
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: shareText });
+      } catch {
+        // User cancelled share
+      }
+    } else {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/50 animate-[fadeIn_0.2s_ease-out]"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="relative w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[90vh] overflow-auto">
+      <div
+        ref={scrollRef}
+        className="relative w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[90vh] overflow-auto animate-slideUp sm:animate-fadeInScale"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Drag handle (mobile) */}
+        <div className="sm:hidden w-10 h-1 bg-gray-300 rounded-full mx-auto mt-2 mb-1" />
+
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
           <h2 className="text-lg font-bold text-gray-900">薬局詳細</h2>
@@ -76,7 +137,6 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
 
           {/* 基本情報 */}
           <div className="mt-4 space-y-3">
-            {/* 住所 */}
             <DetailRow
               icon={
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,7 +148,6 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
               value={pharmacy.address}
             />
 
-            {/* 電話番号 */}
             {pharmacy.phone && (
               <DetailRow
                 icon={
@@ -105,7 +164,6 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
               />
             )}
 
-            {/* 開局時間 */}
             {pharmacy.businessHours && (
               <DetailRow
                 icon={
@@ -118,7 +176,6 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
               />
             )}
 
-            {/* 販売可能薬剤師 */}
             {(pharmacy.pharmacistFemale !== undefined || pharmacy.pharmacistMale !== undefined || pharmacy.pharmacistOther !== undefined) && (
               <DetailRow
                 icon={
@@ -131,25 +188,16 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
                   <div className="flex flex-wrap gap-2">
                     {pharmacy.pharmacistFemale !== undefined && pharmacy.pharmacistFemale > 0 && (
                       <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#EBF6FC] text-[#4AA8D9] rounded text-sm">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
                         女性 {pharmacy.pharmacistFemale}名
                       </span>
                     )}
                     {pharmacy.pharmacistMale !== undefined && pharmacy.pharmacistMale > 0 && (
                       <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
                         男性 {pharmacy.pharmacistMale}名
                       </span>
                     )}
                     {pharmacy.pharmacistOther !== undefined && pharmacy.pharmacistOther > 0 && (
                       <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
                         その他 {pharmacy.pharmacistOther}名
                       </span>
                     )}
@@ -163,7 +211,6 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
               />
             )}
 
-            {/* 時間外対応 */}
             {pharmacy.afterHoursService && (
               <DetailRow
                 icon={
@@ -188,7 +235,6 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
               />
             )}
 
-            {/* 事前電話連絡 */}
             {pharmacy.advanceCallRequired && (
               <DetailRow
                 icon={
@@ -201,7 +247,6 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
               />
             )}
 
-            {/* プライバシー確保策 */}
             {pharmacy.privacyMeasures && (
               <DetailRow
                 icon={
@@ -214,7 +259,6 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
               />
             )}
 
-            {/* ホームページ */}
             {pharmacy.website && (
               <DetailRow
                 icon={
@@ -236,7 +280,6 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
               />
             )}
 
-            {/* 備考 */}
             {pharmacy.notes && (
               <DetailRow
                 icon={
@@ -249,7 +292,6 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
               />
             )}
 
-            {/* 薬局等番号 */}
             {pharmacy.pharmacyNumber && (
               <DetailRow
                 icon={
@@ -263,12 +305,24 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
             )}
           </div>
 
-          {/* 注意事項 */}
-          <div className="mt-6 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              <strong>ご注意：</strong>在庫状況や販売可能な薬剤師の勤務状況は変動します。
-              訪問前に電話で確認することをお勧めします。
+          {/* 案内ボックス */}
+          <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>訪問前に電話するとスムーズです</strong>
             </p>
+            <p className="text-sm text-blue-700 mt-1">
+              在庫の確認や、到着時間を伝えておくと安心です。薬剤師が丁寧に対応してくれます。
+            </p>
+          </div>
+
+          {/* 行動ガイド */}
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm font-medium text-gray-700 mb-2">この薬局に行くまでの流れ</p>
+            <ol className="text-sm text-gray-600 space-y-1.5 list-decimal list-inside">
+              <li>電話で在庫を確認する</li>
+              <li>本人確認書類（免許証・マイナンバーカード等）を持参</li>
+              <li>薬剤師の説明を受けて、その場で服用</li>
+            </ol>
           </div>
 
           {/* アクションボタン */}
@@ -296,6 +350,17 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
               Apple Maps
             </a>
           </div>
+
+          {/* 共有ボタン */}
+          <button
+            onClick={handleShare}
+            className="mt-3 flex items-center justify-center gap-2 w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            {copied ? 'コピーしました' : '共有する'}
+          </button>
 
           {pharmacy.phone && (
             <a

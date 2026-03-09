@@ -6,6 +6,14 @@ interface PharmacyCardProps {
   onClick?: () => void;
 }
 
+function formatShortHours(hours: string): string {
+  const parts = hours.split(/[､、,]/);
+  if (parts.length > 1) {
+    return parts[0] + ' 他';
+  }
+  return hours;
+}
+
 export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pharmacy.address)}`;
 
@@ -22,9 +30,9 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
           </span>
         )}
       </div>
-      
+
       <p className="mt-2 text-gray-600 text-sm">{pharmacy.address}</p>
-      
+
       {pharmacy.phone && (
         <p className="mt-1 text-gray-600 text-sm">
           <a
@@ -44,7 +52,7 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            {pharmacy.businessHours.length > 20 ? pharmacy.businessHours.slice(0, 20) + '...' : pharmacy.businessHours}
+            {formatShortHours(pharmacy.businessHours)}
           </span>
         )}
         {pharmacy.afterHoursService && pharmacy.afterHoursService !== 'なし' && pharmacy.afterHoursService !== '無' && (
@@ -53,6 +61,14 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
             </svg>
             時間外対応あり
+          </span>
+        )}
+        {pharmacy.advanceCallRequired === '要' && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-amber-50 text-amber-700 rounded">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            要事前連絡
           </span>
         )}
         {pharmacy.pharmacistFemale !== undefined && pharmacy.pharmacistFemale > 0 && (
@@ -87,18 +103,6 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
           </svg>
           地図で見る
         </a>
-        {pharmacy.phone && (
-          <a
-            href={`tel:${pharmacy.phone}`}
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-white bg-[#65BBE9] rounded hover:bg-[#4AA8D9] transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-            </svg>
-            電話する
-          </a>
-        )}
         <button
           onClick={onClick}
           className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition-colors ml-auto"
@@ -109,6 +113,20 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
           </svg>
         </button>
       </div>
+
+      {/* 電話ボタン（全幅・独立） */}
+      {pharmacy.phone && (
+        <a
+          href={`tel:${pharmacy.phone}`}
+          onClick={(e) => e.stopPropagation()}
+          className="mt-2 flex items-center justify-center gap-2 w-full px-4 py-3 text-base font-medium text-white bg-[#65BBE9] rounded-lg hover:bg-[#4AA8D9] transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          </svg>
+          電話で問い合わせる
+        </a>
+      )}
     </div>
   );
 }

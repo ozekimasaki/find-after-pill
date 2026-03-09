@@ -277,11 +277,16 @@ async function main() {
               columnMapping.phone = colIndex;
             }
           } else if (cellStr.includes('販売可能薬剤師数') || cellStr.includes('薬剤師数')) {
-            // このカラムの次の行に「女性」「男性」「答えたくない」がある
-            // 実際のデータは [5]=女性, [6]=男性, [7]=答えたくない
+            // マージセルの場合: 次の行に「女性」「男性」「答えたくない」がある
             columnMapping.pharmacistFemale = colIndex;
             columnMapping.pharmacistMale = colIndex + 1;
             columnMapping.pharmacistOther = colIndex + 2;
+          } else if (cellStr === '女性') {
+            columnMapping.pharmacistFemale = colIndex;
+          } else if (cellStr === '男性') {
+            columnMapping.pharmacistMale = colIndex;
+          } else if (cellStr === '答えたくない') {
+            columnMapping.pharmacistOther = colIndex;
           } else if (cellStr === 'HP' || cellStr === 'ホームページ' || cellStr === 'URL') {
             columnMapping.website = colIndex;
           } else if (cellStr === '開局等時間' || cellStr.includes('開局時間') || cellStr.includes('営業時間')) {
@@ -292,7 +297,7 @@ async function main() {
             columnMapping.afterHoursPhone = colIndex;
           } else if (cellStr === 'プライバシー確保策' || cellStr.includes('プライバシー')) {
             columnMapping.privacyMeasures = colIndex;
-          } else if (cellStr === '事前電話連絡') {
+          } else if (cellStr === '事前電話連絡' || cellStr === '事前連絡') {
             columnMapping.advanceCallRequired = colIndex;
           } else if (cellStr === '備考') {
             columnMapping.notes = colIndex;

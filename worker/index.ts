@@ -179,6 +179,128 @@ async function handleApiRequest(request: Request, env: Env): Promise<Response> {
   return errorResponse('Not found', 404);
 }
 
+/**
+ * 都道府県リスト
+ */
+const PREFECTURES = [
+  '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
+  '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県',
+  '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県',
+  '岐阜県', '静岡県', '愛知県', '三重県',
+  '滋賀県', '京都府', '大阪府', '兵庫県', '奈良県', '和歌山県',
+  '鳥取県', '島根県', '岡山県', '広島県', '山口県',
+  '徳島県', '香川県', '愛媛県', '高知県',
+  '福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県',
+];
+
+/**
+ * HTML エスケープ
+ */
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/**
+ * ルートページのプリレンダリングHTML注入
+ */
+async function handleRootPage(request: Request, env: Env): Promise<Response> {
+  // index.html を取得
+  const assetResponse = await env.ASSETS.fetch(request);
+  let html = await assetResponse.text();
+
+  try {
+    // KV からメタデータ取得
+    const metaJson = await getLocalData(env, KV_KEYS.META);
+    const meta: PharmacyMeta | null = metaJson ? JSON.parse(metaJson) : null;
+
+    // KV から薬局データ取得して都道府県別カウント
+    const pharmaciesJson = await getLocalData(env, KV_KEYS.PHARMACIES);
+    let prefectureCounts: Record<string, number> = {};
+    let totalCount = meta?.totalCount || 0;
+
+    if (pharmaciesJson) {
+      const pharmacies: Pharmacy[] = JSON.parse(pharmaciesJson);
+      for (const p of pharmacies) {
+        prefectureCounts[p.prefecture] = (prefectureCounts[p.prefecture] || 0) + 1;
+      }
+      if (!totalCount) totalCount = pharmacies.length;
+    }
+
+    // 最終更新日フォーマット
+    const lastUpdated = meta?.lastUpdated
+      ? new Date(meta.lastUpdated).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })
+      : '';
+
+    // 都道府県リストHTML生成
+    const prefectureListHtml = PREFECTURES
+      .filter(pref => prefectureCounts[pref])
+      .map(pref => `<li>${escapeHtml(pref)}（${prefectureCounts[pref]}件）</li>`)
+      .join('');
+
+    // プリレンダリングHTML
+    const prerenderHtml = `
+      <header>
+        <h1>緊急避妊薬ナビ - ノルレボ・レソエル72・アフターピル販売薬局検索</h1>
+        <p>全国${totalCount.toLocaleString()}件の薬局で緊急避妊薬（アフターピル）を購入できます</p>
+        ${lastUpdated ? `<p>最終更新: ${escapeHtml(lastUpdated)}</p>` : ''}
+      </header>
+      <main>
+        <section>
+          <h2>都道府県から緊急避妊薬の販売薬局を探す</h2>
+          <ul>${prefectureListHtml}</ul>
+        </section>
+        <section>
+          <h2>緊急避妊薬（アフターピル）について</h2>
+          <p>緊急避妊薬は、性交後72時間以内に服用することで妊娠を防ぐ薬です。有効成分はレボノルゲストレル1.5mgで、商品名はノルレボ（先発医薬品）およびレソエル72（後発医薬品）です。</p>
+          <p>2024年11月28日から、処方箋なしで一部の薬局で購入できるようになりました。当サイトでは厚生労働省の公式データに基づき、販売可能な薬局を検索できます。</p>
+        </section>
+        <section>
+          <h2>よくある質問</h2>
+          <h3>緊急避妊薬（アフターピル）はどこで買えますか？</h3>
+          <p>処方箋なしで一部の薬局で購入できます。厚生労働省が公開している販売可能な薬局一覧に掲載されている薬局が対象です。</p>
+          <h3>ノルレボとレソエル72の違いは何ですか？</h3>
+          <p>どちらもレボノルゲストレル1.5mgを有効成分とする緊急避妊薬です。ノルレボは先発医薬品、レソエル72は後発医薬品（ジェネリック）で、効果や用法は同じです。</p>
+          <h3>緊急避妊薬の値段はいくらですか？</h3>
+          <p>薬局での販売価格は7,000円〜9,000円程度が目安です（税込）。</p>
+        </section>
+      </main>`;
+
+    // 動的JSON-LD
+    const dynamicJsonLd = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      'name': '緊急避妊薬ナビ',
+      'url': 'https://find-after-pill.com/',
+      'description': `全国${totalCount.toLocaleString()}件の薬局で緊急避妊薬（ノルレボ・レソエル72・アフターピル）を購入できます`,
+      ...(lastUpdated ? { 'dateModified': meta!.lastUpdated } : {}),
+    });
+
+    // index.html に注入
+    html = html.replace(
+      '<div id="root">',
+      `<div id="root">${prerenderHtml}`
+    );
+
+    // 動的JSON-LDを</head>の前に注入
+    html = html.replace(
+      '</head>',
+      `<script type="application/ld+json">${dynamicJsonLd}</script>\n  </head>`
+    );
+  } catch (e) {
+    console.error('Pre-render error:', e);
+    // エラー時はオリジナルHTMLをそのまま返す
+  }
+
+  return new Response(html, {
+    headers: {
+      'Content-Type': 'text/html;charset=UTF-8',
+      ...Object.fromEntries(
+        [...assetResponse.headers.entries()].filter(([k]) => k.toLowerCase() !== 'content-type')
+      ),
+    },
+  });
+}
+
 export default {
   /**
    * HTTP リクエストハンドラ
@@ -189,6 +311,11 @@ export default {
     // API リクエスト
     if (url.pathname.startsWith('/api/')) {
       return handleApiRequest(request, env);
+    }
+
+    // ルートページ: プリレンダリングHTML注入
+    if (url.pathname === '/' || url.pathname === '') {
+      return handleRootPage(request, env);
     }
 
     // 静的アセットは Cloudflare が自動的に処理

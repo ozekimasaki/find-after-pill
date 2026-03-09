@@ -6,7 +6,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {/* このサイトについて */}
           <div>
-            <h3 className="text-white font-bold mb-3">このサイトについて</h3>
+            <h2 className="text-white font-bold mb-3">このサイトについて</h2>
             <p className="text-sm leading-relaxed">
               このサイトは厚生労働省が公開している「要指導医薬品である緊急避妊薬の販売が可能な薬局等の一覧」
               を元に、薬局を検索しやすくしたものです。
@@ -27,10 +27,13 @@ export function Footer() {
 
           {/* レボノルゲストレル（緊急避妊薬）について */}
           <div>
-            <h3 className="text-white font-bold mb-3">緊急避妊薬について</h3>
+            <h2 className="text-white font-bold mb-3">緊急避妊薬について</h2>
             <ul className="text-sm space-y-1.5">
               <li>
                 <span className="text-gray-400">薬効分類:</span> 緊急避妊剤
+              </li>
+              <li>
+                <span className="text-gray-400">商品名:</span> ノルレボ（先発）/ レソエル72（後発）
               </li>
               <li>
                 <span className="text-gray-400">有効成分:</span> レボノルゲストレル 1.5mg
@@ -60,7 +63,7 @@ export function Footer() {
 
           {/* ご注意・相談窓口 */}
           <div>
-            <h3 className="text-white font-bold mb-3">ご注意</h3>
+            <h2 className="text-white font-bold mb-3">ご注意</h2>
             <ul className="text-sm space-y-2">
               <li>
                 • 在庫状況や販売可能な薬剤師の勤務状況は変動します。訪問前に電話で確認することをお勧めします。
@@ -71,7 +74,7 @@ export function Footer() {
             </ul>
 
             {/* 相談窓口 */}
-            <h3 className="text-white font-bold mt-6 mb-3">相談窓口</h3>
+            <h2 className="text-white font-bold mt-6 mb-3">相談窓口</h2>
             <ul className="text-sm space-y-2">
               <li>
                 <a

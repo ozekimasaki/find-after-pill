@@ -76,6 +76,14 @@ export interface SearchParams {
   lng?: number;
   /** 検索半径（km） */
   radius?: number;
+  /** 時間外対応ありのみ */
+  afterHoursOnly?: boolean;
+  /** 事前連絡不要のみ */
+  noAdvanceCallRequired?: boolean;
+  /** 女性薬剤師在籍のみ */
+  femalePharmacistOnly?: boolean;
+  /** プライバシー配慮ありのみ */
+  hasPrivateSpace?: boolean;
 }
 
 /**

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import 'leaflet.markercluster';
 import type { PharmacyWithDistance } from '../types/pharmacy';
 import type { GeoLocation } from '../types/pharmacy';
 
@@ -35,7 +36,7 @@ const userLocationIcon = new L.DivIcon({
     <div style="
       width: 20px;
       height: 20px;
-      background: #ec4899;
+      background: #65BBE9;
       border: 3px solid white;
       border-radius: 50%;
       box-shadow: 0 2px 4px rgba(0,0,0,0.3);
@@ -61,6 +62,43 @@ function MapUpdater({ center, zoom }: { center: [number, number]; zoom: number }
       prevCenter.current = center;
     }
   }, [map, center, zoom]);
+
+  return null;
+}
+
+// クラスタリングされたマーカーレイヤー
+function MarkerLayer({ pharmacies }: { pharmacies: PharmacyWithDistance[] }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const cluster = L.markerClusterGroup({
+      chunkedLoading: true,
+      maxClusterRadius: 50,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+    });
+
+    pharmacies.forEach(p => {
+      if (p.lat === null || p.lng === null) return;
+      const marker = L.marker([p.lat, p.lng], { icon: pharmacyIcon });
+
+      let popupContent = `<div style="min-width:200px"><h3 style="font-weight:bold;color:#111827;margin:0">${p.name}</h3>`;
+      popupContent += `<p style="font-size:0.875rem;color:#4b5563;margin-top:4px">${p.address}</p>`;
+      if (p.phone) {
+        popupContent += `<p style="font-size:0.875rem;margin-top:4px"><a href="tel:${p.phone}" style="color:#65BBE9;text-decoration:none">${p.phone}</a></p>`;
+      }
+      if (p.distance !== undefined) {
+        popupContent += `<p style="font-size:0.875rem;color:#65BBE9;margin-top:4px">約 ${p.distance.toFixed(1)}km</p>`;
+      }
+      popupContent += `</div>`;
+
+      marker.bindPopup(popupContent);
+      cluster.addLayer(marker);
+    });
+
+    map.addLayer(cluster);
+    return () => { map.removeLayer(cluster); };
+  }, [pharmacies, map]);
 
   return null;
 }
@@ -110,7 +148,7 @@ export function Map({ pharmacies, userLocation }: MapProps) {
 
       <MapUpdater center={center} zoom={zoom} />
 
-      {/* 現在地マーカー */}
+      {/* 現在地マーカー（クラスター外） */}
       {userLocation && (
         <Marker
           position={[userLocation.lat, userLocation.lng]}
@@ -124,33 +162,8 @@ export function Map({ pharmacies, userLocation }: MapProps) {
         </Marker>
       )}
 
-      {/* 薬局マーカー */}
-      {mappablePharmacies.map((pharmacy) => (
-        <Marker
-          key={pharmacy.id}
-          position={[pharmacy.lat!, pharmacy.lng!]}
-          icon={pharmacyIcon}
-        >
-          <Popup>
-            <div className="min-w-[200px]">
-              <h3 className="font-bold text-gray-900">{pharmacy.name}</h3>
-              <p className="text-sm text-gray-600 mt-1">{pharmacy.address}</p>
-              {pharmacy.phone && (
-                <p className="text-sm mt-1">
-                  <a href={`tel:${pharmacy.phone}`} className="text-pink-600 hover:underline">
-                    {pharmacy.phone}
-                  </a>
-                </p>
-              )}
-              {pharmacy.distance !== undefined && (
-                <p className="text-sm text-pink-600 mt-1">
-                  約 {pharmacy.distance.toFixed(1)}km
-                </p>
-              )}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
+      {/* 薬局マーカー（クラスタリング） */}
+      <MarkerLayer pharmacies={mappablePharmacies} />
     </MapContainer>
   );
 }

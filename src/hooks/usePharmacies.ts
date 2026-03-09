@@ -76,9 +76,31 @@ export function usePharmacies(userLocation?: GeoLocation | null): UsePharmaciesR
     // フリーワード検索
     if (searchParams.query) {
       const query = searchParams.query.toLowerCase();
-      filtered = filtered.filter(p => 
+      filtered = filtered.filter(p =>
         p.name.toLowerCase().includes(query) ||
         p.address.toLowerCase().includes(query)
+      );
+    }
+
+    // 追加フィルター
+    if (searchParams.afterHoursOnly) {
+      filtered = filtered.filter(p =>
+        p.afterHoursService && p.afterHoursService !== 'なし' && p.afterHoursService !== '無'
+      );
+    }
+    if (searchParams.noAdvanceCallRequired) {
+      filtered = filtered.filter(p =>
+        !p.advanceCallRequired || p.advanceCallRequired !== '要'
+      );
+    }
+    if (searchParams.femalePharmacistOnly) {
+      filtered = filtered.filter(p =>
+        p.pharmacistFemale !== undefined && p.pharmacistFemale > 0
+      );
+    }
+    if (searchParams.hasPrivateSpace) {
+      filtered = filtered.filter(p =>
+        p.privacyMeasures && p.privacyMeasures.includes('個室')
       );
     }
 

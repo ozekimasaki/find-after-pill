@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useDebounce } from '../hooks/useDebounce';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -7,11 +8,11 @@ interface SearchBarProps {
 
 export function SearchBar({ onSearch, placeholder = '薬局名・住所で検索' }: SearchBarProps) {
   const [value, setValue] = useState('');
+  const debouncedValue = useDebounce(value, 300);
 
-  const handleSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    onSearch(value.trim());
-  }, [value, onSearch]);
+  useEffect(() => {
+    onSearch(debouncedValue.trim());
+  }, [debouncedValue, onSearch]);
 
   const handleClear = useCallback(() => {
     setValue('');
@@ -19,7 +20,7 @@ export function SearchBar({ onSearch, placeholder = '薬局名・住所で検索
   }, [onSearch]);
 
   return (
-    <form onSubmit={handleSubmit} className="relative">
+    <div className="relative">
       <div className="relative">
         <input
           type="text"
@@ -53,6 +54,6 @@ export function SearchBar({ onSearch, placeholder = '薬局名・住所で検索
           </button>
         )}
       </div>
-    </form>
+    </div>
   );
 }

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "WebFetch(domain:alinamin-kenko.jp)",
+      "WebFetch(domain:www.daiichisankyo-hc.co.jp)",
+      "WebFetch(domain:www.mhlw.go.jp)",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(npm run:*)"
+    ]
+  }
+}

@@ -12,7 +12,7 @@ export function PrefectureFilter({ value, onChange, counts = {} }: PrefectureFil
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none pl-4 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none bg-white cursor-pointer"
+        className="w-full appearance-none pl-4 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#65BBE9] focus:border-transparent outline-none bg-white cursor-pointer"
       >
         <option value="">全国</option>
         {PREFECTURES.map((pref) => (
