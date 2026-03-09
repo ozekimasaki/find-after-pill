@@ -49,7 +49,7 @@ export function Footer() {
               </li>
             </ul>
             <p className="text-xs mt-2 text-gray-400">
-              ※完全に妊娠を阻止できるわけではありません。計画的な避妊には経口避妊薬をご使用ください。
+              ※緊急避妊薬は、避妊に失敗した後の緊急手段です。継続的な避妊については、低用量ピル、コンドーム、IUD/IUSなどの方法があります。体質や希望に応じて医師・薬剤師に相談してください。
             </p>
             <a
               href="https://www.kegg.jp/medicus-bin/japic_med?japic_code=00067924"
