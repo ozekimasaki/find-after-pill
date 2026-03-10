@@ -14,12 +14,26 @@ import { usePharmacies } from './hooks/usePharmacies';
 
 type ViewMode = 'list' | 'map';
 
+function isAfterHoursJST(): boolean {
+  const now = new Date();
+  const jstOffset = 9 * 60; // UTC+9 (日本は夏時間なし)
+  const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const jstMinutes = (utcMinutes + jstOffset) % (24 * 60);
+  const jstHour = Math.floor(jstMinutes / 60);
+  const jstTime = now.getTime() + jstOffset * 60 * 1000;
+  const jstDay = new Date(jstTime).getUTCDay(); // 0=日, 6=土
+  return jstDay === 0 || jstDay === 6 || jstHour < 9 || jstHour >= 18;
+}
+
+const RADIUS_OPTIONS = [3, 5, 10, 20, 50];
+
 function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [radius, setRadius] = useState(10);
-  const [showOtherSearch, setShowOtherSearch] = useState(false);
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [wasAutoEnabled, setWasAutoEnabled] = useState(isAfterHoursJST);
 
+  const resultAreaRef = useRef<HTMLDivElement>(null);
   const resultCountRef = useRef<HTMLDivElement>(null);
   const prevLocationRef = useRef<{ lat: number; lng: number } | null>(null);
 
@@ -74,39 +88,30 @@ function App() {
       femalePharmacistOnly: false,
       hasPrivateSpace: false,
     });
+    setWasAutoEnabled(false);
   }, [setSearchParams]);
 
-  // Auto-expand other search when filters/query are active
-  const hasActiveFilters = !!(
-    searchParams.query ||
-    searchParams.prefecture ||
-    searchParams.afterHoursOnly ||
-    searchParams.noAdvanceCallRequired ||
-    searchParams.femalePharmacistOnly ||
-    searchParams.hasPrivateSpace
-  );
-
-  useEffect(() => {
-    if (hasActiveFilters) {
-      setShowOtherSearch(true);
+  // Wrap setSearchParams to clear auto-enabled hint when user manually toggles afterHoursOnly off
+  const handleFilterChange: typeof setSearchParams = useCallback((params) => {
+    if ('afterHoursOnly' in params && !params.afterHoursOnly && wasAutoEnabled) {
+      setWasAutoEnabled(false);
     }
-  }, [hasActiveFilters]);
+    setSearchParams(params);
+  }, [setSearchParams, wasAutoEnabled]);
 
-  // Count active text/select filters for the toggle button
-  const activeFilterCount = [
-    searchParams.query,
-    searchParams.prefecture,
-    searchParams.afterHoursOnly,
-    searchParams.noAdvanceCallRequired,
-    searchParams.femalePharmacistOnly,
-    searchParams.hasPrivateSpace,
-  ].filter(Boolean).length;
+  // Auto-enable after-hours filter during off-hours (mount only)
+  useEffect(() => {
+    if (wasAutoEnabled) {
+      setSearchParams({ afterHoursOnly: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Scroll to results when location is first obtained
   useEffect(() => {
     if (prevLocationRef.current === null && userLocation !== null) {
       setTimeout(() => {
-        resultCountRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        resultAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 300);
     }
     prevLocationRef.current = userLocation;
@@ -148,8 +153,6 @@ function App() {
               loading={locationLoading}
               hasLocation={!!userLocation}
               onClear={handleClearLocation}
-              radius={radius}
-              onRadiusChange={handleRadiusChange}
             />
             {locationError && (
               <p className="mt-2 text-sm text-red-600">{locationError}</p>
@@ -163,54 +166,51 @@ function App() {
             <div className="flex-1 border-t border-gray-200" />
           </div>
 
-          {/* モバイルでは折りたたみトグル */}
-          <button
-            onClick={() => setShowOtherSearch(!showOtherSearch)}
-            className="w-full flex items-center justify-between py-2 text-sm text-gray-600 hover:text-gray-800 md:hidden"
-          >
-            <span className="flex items-center gap-2">
-              薬局名・都道府県で探す
-              {activeFilterCount > 0 && (
-                <span className="px-1.5 py-0.5 text-xs font-medium bg-[#65BBE9] text-white rounded-full">
-                  {activeFilterCount}
-                </span>
-              )}
-            </span>
-            <svg
-              className={`w-5 h-5 transition-transform duration-300 ${showOtherSearch ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          {/* 検索フォーム（モバイルでは折りたたみ、デスクトップでは常時表示） */}
-          <div className={`overflow-hidden transition-all duration-300 ease-out md:max-h-none md:opacity-100 ${
-            showOtherSearch ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0 md:max-h-none md:opacity-100'
-          }`}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 md:pt-0">
-              <div className="md:col-span-2">
-                <SearchBar onSearch={handleSearch} />
-              </div>
-              <div>
-                <PrefectureFilter
-                  value={searchParams.prefecture || ''}
-                  onChange={handlePrefectureChange}
-                  counts={prefectureCounts}
-                />
-              </div>
+          {/* 検索フォーム */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <SearchBar onSearch={handleSearch} />
             </div>
-
-            <div className="mt-4">
-              <FilterPanel
-                searchParams={searchParams}
-                setSearchParams={setSearchParams}
+            <div>
+              <PrefectureFilter
+                value={searchParams.prefecture || ''}
+                onChange={handlePrefectureChange}
+                counts={prefectureCounts}
               />
             </div>
           </div>
+
+          <div className="mt-4">
+            <FilterPanel
+              searchParams={searchParams}
+              setSearchParams={handleFilterChange}
+            />
+          </div>
         </div>
+
+        {/* 距離セレクター（位置取得時のみ、結果の近くに表示） */}
+        {userLocation && (
+          <div ref={resultAreaRef} className="mb-3">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-sm font-medium text-gray-700">距離で絞り込み</span>
+            </div>
+            <div className="flex gap-1">
+              {RADIUS_OPTIONS.map((r) => (
+                <button
+                  key={r}
+                  onClick={() => handleRadiusChange(r)}
+                  className={`flex-1 py-1.5 text-sm font-medium rounded transition-colors ${
+                    radius === r
+                      ? 'bg-[#65BBE9] text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {r}km
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 結果カウント */}
         <div
@@ -230,6 +230,17 @@ function App() {
             </span>
           )}
         </div>
+
+        {/* 夜間自動ONのヒント */}
+        {wasAutoEnabled && searchParams.afterHoursOnly && (
+          <p className="text-xs text-gray-400 flex items-center gap-1 px-1 mb-2">
+            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            現在の時間帯に基づいて「夜間・休日も対応」を自動で有効にしました
+          </p>
+        )}
 
         {/* 表示切替タブ */}
         <h2 className="sr-only">検索結果</h2>

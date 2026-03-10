@@ -3,52 +3,31 @@ interface LocationButtonProps {
   loading: boolean;
   hasLocation: boolean;
   onClear?: () => void;
-  radius: number;
-  onRadiusChange: (radius: number) => void;
 }
 
-const RADIUS_OPTIONS = [3, 5, 10, 20, 50];
-
-export function LocationButton({ onClick, loading, hasLocation, onClear, radius, onRadiusChange }: LocationButtonProps) {
+export function LocationButton({ onClick, loading, hasLocation, onClear }: LocationButtonProps) {
   if (hasLocation && onClear) {
     return (
-      <div>
-        <div className="flex gap-2">
-          <button
-            onClick={onClick}
-            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#65BBE9] text-white rounded-lg hover:bg-[#4AA8D9] transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span>現在地で検索中</span>
-          </button>
-          <button
-            onClick={onClear}
-            className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-            title="位置情報をクリア"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div className="mt-2 flex gap-1">
-          {RADIUS_OPTIONS.map((r) => (
-            <button
-              key={r}
-              onClick={() => onRadiusChange(r)}
-              className={`flex-1 py-1.5 text-sm font-medium rounded transition-colors ${
-                radius === r
-                  ? 'bg-[#65BBE9] text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {r}km
-            </button>
-          ))}
-        </div>
+      <div className="flex gap-2">
+        <button
+          onClick={onClick}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#65BBE9] text-white rounded-lg hover:bg-[#4AA8D9] transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span>現在地で検索中</span>
+        </button>
+        <button
+          onClick={onClear}
+          className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          title="位置情報をクリア"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
     );
   }
