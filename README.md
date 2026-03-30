@@ -48,9 +48,9 @@ npm run dev
 npm run deploy
 ```
 
-## 自動データ更新（GitHub Actions）
+## 自動データ更新（GitHub Actions + Raspberry Pi self-hosted runner）
 
-GitHub Actionsで毎日自動的にデータを更新します。
+日次更新のスケジュールと実行履歴は GitHub Actions に残しつつ、実際の実行は Raspberry Pi 上の self-hosted runner で行います。これにより GitHub-hosted runner の利用時間を消費せずに、既存の `schedule` / `workflow_dispatch` / 実行ログをそのまま使えます。
 
 ### セットアップ手順
 
@@ -62,22 +62,52 @@ GitHub Actionsで毎日自動的にデータを更新します。
      - Account > Workers Scripts > Edit
 
 2. **GitHubリポジトリのSecretsを設定**
-   - リポジトリの Settings > Secrets and variables > Actions
-   - 以下のSecretsを追加:
+    - リポジトリの Settings > Secrets and variables > Actions
+    - 以下のSecretsを追加:
 
    | Secret名 | 値 |
    |----------|-----|
-   | `CLOUDFLARE_API_TOKEN` | 作成したAPIトークン |
-   | `CLOUDFLARE_ACCOUNT_ID` | `6f2f1ee8a618e7fcb9f6737c3a84c526` |
-   | `KV_NAMESPACE_ID` | `fc31f846ec04459795c527ed04d9fd8f` |
+    | `CLOUDFLARE_API_TOKEN` | 作成したAPIトークン |
+    | `CLOUDFLARE_ACCOUNT_ID` | `6f2f1ee8a618e7fcb9f6737c3a84c526` |
+    | `KV_NAMESPACE_ID` | `fc31f846ec04459795c527ed04d9fd8f` |
 
-3. **手動実行でテスト**
-   - Actions タブ > 「Update Pharmacy Data」 > 「Run workflow」
+3. **Raspberry Pi に self-hosted runner を追加**
+   - リポジトリの Settings > Actions > Runners > **New self-hosted runner**
+   - OS は **Linux**、Architecture は **ARM64** を選択
+   - GitHub が表示するコマンドを Raspberry Pi 上で順に実行して runner を登録
+   - runner には custom label として `pharmacy-data-update` を付ける
+   - このリポジトリの更新 workflow は `runs-on: [self-hosted, linux, ARM64, pharmacy-data-update]` を使うため、label が一致しないとジョブを拾いません
+
+4. **runner をサービス化して自動起動させる**
+   - runner のセットアップ完了後、runner ディレクトリで以下を実行:
+
+   ```bash
+   sudo ./svc.sh install
+   sudo ./svc.sh start
+   sudo ./svc.sh status
+   ```
+
+   - GitHub のドキュメントどおり、Linux では `svc.sh` で systemd service として登録できます
+
+5. **Raspberry Pi 側の最低限の前提を用意**
+   - `git` をインストールしておく
+   - GitHub Actions 側で `actions/setup-node@v4` により Node.js 20 を入れるため、Node.js を手動で固定配置しなくても workflow 自体は動かせます
+   - Cloudflare の認証情報は引き続き GitHub Actions Secrets から渡すので、Raspberry Pi に別の `.env` を置く必要はありません
+
+6. **手動実行でテスト**
+    - Actions タブ > 「Update Pharmacy Data」 > 「Run workflow」
 
 ### スケジュール
 
 - 毎日 UTC 21:00（日本時間 6:00）に自動実行
 - 手動実行も可能（workflow_dispatch）
+
+### 運用上の注意
+
+- GitHub Docs では self-hosted runner は private repository での利用が推奨されています。public repository で使う場合は、fork / PR 由来の untrusted code をこの runner で実行しないようにしてください
+- `pharmacy-data-update` ラベルはこの日次更新 job 専用にし、他の workflow から安易に共有しない方が安全です
+- runner が offline の間は schedule は失敗するため、GitHub の Actions 画面で runner 状態を確認できるようにしておくと運用しやすいです
+- summary 生成は `node` で行うようにしているため、Raspberry Pi に `jq` を別途入れなくても動きます
 
 ## 手動データ更新
 

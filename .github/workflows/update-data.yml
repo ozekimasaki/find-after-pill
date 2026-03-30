@@ -6,10 +6,17 @@ on:
     - cron: '0 21 * * *'
   workflow_dispatch: # 手動実行も可能
 
+concurrency:
+  group: update-pharmacy-data
+  cancel-in-progress: false
+
 jobs:
   update:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # Raspberry Pi 上の self-hosted runner のみで実行する
+    runs-on: [self-hosted, linux, ARM64, pharmacy-data-update]
+    timeout-minutes: 180
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -54,8 +61,18 @@ jobs:
 
       - name: Summary
         run: |
-          echo "## Data Update Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          cat public/data/meta.json | jq -r '"- **Total pharmacies**: \(.totalCount)"' >> $GITHUB_STEP_SUMMARY
-          cat public/data/meta.json | jq -r '"- **Last updated**: \(.lastUpdated)"' >> $GITHUB_STEP_SUMMARY
-          cat public/data/meta.json | jq -r '"- **Source**: \(.sourceUrl)"' >> $GITHUB_STEP_SUMMARY
+          node --input-type=module <<'EOF'
+          import fs from 'node:fs';
+
+          const meta = JSON.parse(fs.readFileSync('public/data/meta.json', 'utf8'));
+          const summaryLines = [
+            '## Data Update Summary',
+            '',
+            `- **Total pharmacies**: ${meta.totalCount}`,
+            `- **Last updated**: ${meta.lastUpdated}`,
+            `- **Source**: ${meta.sourceUrl}`,
+            '',
+          ];
+
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${summaryLines.join('\n')}\n`);
+          EOF
