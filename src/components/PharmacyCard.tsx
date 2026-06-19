@@ -1,5 +1,6 @@
 import type { PharmacyWithDistance } from '../types/pharmacy';
 import { formatDistance } from '../utils/distance';
+import { hasAfterHoursSupport } from '../utils/pharmacyAvailability';
 
 interface PharmacyCardProps {
   pharmacy: PharmacyWithDistance;
@@ -43,7 +44,7 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
         target="_blank"
         rel="noopener noreferrer"
         onClick={(e) => e.stopPropagation()}
-        className="mt-2 text-gray-600 text-sm hover:text-[#65BBE9] transition-colors block"
+        className="mt-2 block w-fit max-w-full break-words text-gray-600 text-sm hover:text-[#65BBE9] transition-colors"
       >
         {pharmacy.address}
       </a>
@@ -70,7 +71,7 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
             {formatShortHours(pharmacy.businessHours)}
           </span>
         )}
-        {pharmacy.afterHoursService && pharmacy.afterHoursService !== 'なし' && pharmacy.afterHoursService !== '無' && (
+        {hasAfterHoursSupport(pharmacy.afterHoursService) && (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-purple-50 text-purple-700 rounded">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />

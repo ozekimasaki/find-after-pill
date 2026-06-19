@@ -11,19 +11,9 @@ import { Map } from './components/Map';
 import { FAQ } from './components/FAQ';
 import { useGeolocation } from './hooks/useGeolocation';
 import { usePharmacies } from './hooks/usePharmacies';
+import { isAfterHoursJst } from './utils/pharmacyAvailability';
 
 type ViewMode = 'list' | 'map';
-
-function isAfterHoursJST(): boolean {
-  const now = new Date();
-  const jstOffset = 9 * 60; // UTC+9 (日本は夏時間なし)
-  const utcMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
-  const jstMinutes = (utcMinutes + jstOffset) % (24 * 60);
-  const jstHour = Math.floor(jstMinutes / 60);
-  const jstTime = now.getTime() + jstOffset * 60 * 1000;
-  const jstDay = new Date(jstTime).getUTCDay(); // 0=日, 6=土
-  return jstDay === 0 || jstDay === 6 || jstHour < 9 || jstHour >= 18;
-}
 
 const RADIUS_OPTIONS = [3, 5, 10, 20, 50];
 
@@ -31,7 +21,7 @@ function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [radius, setRadius] = useState(10);
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [wasAutoEnabled, setWasAutoEnabled] = useState(isAfterHoursJST);
+  const [wasAutoEnabled, setWasAutoEnabled] = useState(isAfterHoursJst);
 
   const resultAreaRef = useRef<HTMLDivElement>(null);
   const resultCountRef = useRef<HTMLDivElement>(null);

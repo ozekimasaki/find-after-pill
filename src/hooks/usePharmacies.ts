@@ -7,6 +7,7 @@ import type {
   GeoLocation 
 } from '../types/pharmacy';
 import { calculateDistance } from '../utils/distance';
+import { supportsAfterHoursFilter } from '../utils/pharmacyAvailability';
 
 interface UsePharmaciesReturn {
   pharmacies: PharmacyWithDistance[];
@@ -84,9 +85,7 @@ export function usePharmacies(userLocation?: GeoLocation | null): UsePharmaciesR
 
     // 追加フィルター
     if (searchParams.afterHoursOnly) {
-      filtered = filtered.filter(p =>
-        p.afterHoursService && p.afterHoursService !== 'なし' && p.afterHoursService !== '無'
-      );
+      filtered = filtered.filter(supportsAfterHoursFilter);
     }
     if (searchParams.noAdvanceCallRequired) {
       filtered = filtered.filter(p =>

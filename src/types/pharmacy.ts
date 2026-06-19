@@ -76,7 +76,7 @@ export interface SearchParams {
   lng?: number;
   /** 検索半径（km） */
   radius?: number;
-  /** 時間外対応ありのみ */
+  /** 夜間・休日対応ありのみ */
   afterHoursOnly?: boolean;
   /** 事前連絡不要のみ */
   noAdvanceCallRequired?: boolean;

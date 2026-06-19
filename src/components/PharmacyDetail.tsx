@@ -164,7 +164,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
                   href={googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline"
+                  className="inline-block w-fit max-w-full break-words text-[#65BBE9] hover:text-[#4AA8D9] hover:underline"
                 >
                   {pharmacy.address}
                 </a>
