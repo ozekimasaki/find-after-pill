@@ -100,6 +100,36 @@ interface PharmacyMeta {
   totalCount: number;
   sourceUrl: string;
   fileName?: string;
+  /** ExcelファイルのLast-Modifiedヘッダー値（更新判定用） */
+  sourceLastModified?: string;
+}
+
+/**
+ * 既存のmeta.jsonから前回処理時のメタ情報を取得
+ */
+function getPreviousMeta(): PharmacyMeta | null {
+  const metaPath = path.join(process.cwd(), 'public', 'data', 'meta.json');
+  try {
+    return JSON.parse(fs.readFileSync(metaPath, 'utf8')) as PharmacyMeta;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * HEADリクエストでファイルのLast-Modifiedヘッダーを取得
+ */
+async function fetchLastModified(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url, {
+      method: 'HEAD',
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; NorlevoPortal/1.0)' },
+    });
+    if (!response.ok) return null;
+    return response.headers.get('last-modified') || null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -224,6 +254,29 @@ async function main() {
     // Excel URLを取得
     const excelUrl = await findExcelUrl();
     const fileName = excelUrl.split('/').pop() || 'unknown.xlsx';
+
+    // ExcelファイルのLast-Modifiedを取得して前回と比較
+    const previousMeta = getPreviousMeta();
+    const currentLastModified = await fetchLastModified(excelUrl);
+    console.log(`Excel Last-Modified: ${currentLastModified ?? '(取得失敗)'}`);
+    console.log(`前回 Last-Modified:  ${previousMeta?.sourceLastModified ?? '(記録なし)'}`);
+
+    const isUnchanged =
+      previousMeta?.sourceUrl === excelUrl &&
+      currentLastModified != null &&
+      currentLastModified === previousMeta?.sourceLastModified;
+
+    if (isUnchanged) {
+      console.log(`\nデータに変更はありません（同じExcelファイル: ${fileName}）\nスキップします。`);
+      const ghOutput = process.env.GITHUB_OUTPUT;
+      if (ghOutput) {
+        fs.appendFileSync(ghOutput, `data_changed=false\n`);
+      }
+      return;
+    }
+    console.log(previousMeta?.sourceLastModified
+      ? `Excelファイルが更新されています`
+      : `初回実行: ${excelUrl}`);
 
     // Excelをダウンロード
     console.log('Excelファイルをダウンロード中...');
@@ -461,6 +514,7 @@ async function main() {
       totalCount: pharmacies.length,
       sourceUrl: excelUrl,
       fileName,
+      sourceLastModified: currentLastModified ?? undefined,
     };
 
     const metaPath = path.join(outputDir, 'meta.json');
@@ -468,6 +522,12 @@ async function main() {
     console.log(`メタデータを保存: ${metaPath}`);
 
     console.log('\n完了!');
+
+    // GitHub Actions 向けに出力変数を設定
+    const ghOutput = process.env.GITHUB_OUTPUT;
+    if (ghOutput) {
+      fs.appendFileSync(ghOutput, `data_changed=true\n`);
+    }
 
   } catch (error) {
     console.error('エラー:', error);
