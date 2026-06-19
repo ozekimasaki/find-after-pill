@@ -12,8 +12,7 @@ concurrency:
 
 jobs:
   update:
-    # Raspberry Pi 上の self-hosted runner のみで実行する
-    runs-on: [self-hosted, linux, ARM64, pharmacy-data-update]
+    runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
       contents: write
