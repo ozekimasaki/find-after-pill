@@ -1,23 +1,40 @@
-# Norlevo Portal - 緊急避妊薬 販売薬局検索
+# 緊急避妊薬ナビ (find-after-pill.com)
 
-厚生労働省が公開している「要指導医薬品である緊急避妊薬の販売が可能な薬局等の一覧」を検索しやすくしたポータルサイトです。
+厚生労働省が公開している「要指導医薬品である緊急避妊薬の販売が可能な薬局等の一覧」を、検索しやすくしたポータルサイトです。現在地・都道府県・フリーワードから最寄りの薬局を素早く見つけられることを目的としています。
 
-## 機能
+- **本番URL**: https://find-after-pill.com/
+- **データソース**: [厚生労働省 - 要指導医薬品である緊急避妊薬の販売が可能な薬局等の一覧](https://www.mhlw.go.jp/stf/kinnkyuuhininnyaku_00005.html)
 
-- **現在地検索**: GPSを使って近くの薬局を検索
-- **都道府県フィルター**: 都道府県ごとに絞り込み
+## 主な機能
+
+- **現在地検索**: GPS（HTML5 Geolocation API）を使って近くの薬局を検索し、距離順にソート
+- **都道府県フィルター**: 都道府県ごとに件数付きで絞り込み
 - **フリーワード検索**: 薬局名・住所で検索
-- **地図表示**: Leaflet + OpenStreetMapで薬局の位置を表示
-- **詳細表示**: 薬局の詳細情報、Google Maps/Apple Mapsへのリンク
+- **絞り込みフィルター**: 夜間・休日対応 / 予約不要 / 女性薬剤師在籍 / 個室あり
+- **地図表示**: Leaflet + OpenStreetMap でマーカークラスタリング表示、ユーザー位置も表示
+- **詳細表示**: 薬局の詳細モーダル、Google Maps / Apple Maps へのリンク、電話発信、共有ボタン
+- **サポート導線**: #8103（性犯罪・性暴力被害者のためのワンストップ支援センター）ホットラインバナー
 
 ## 技術スタック
 
-- **フロントエンド**: React + Vite + TypeScript
-- **バックエンド**: Cloudflare Workers
-- **データストア**: Cloudflare KV
-- **スタイリング**: Tailwind CSS
-- **地図**: Leaflet + OpenStreetMap
-- **自動更新**: GitHub Actions
+| レイヤー | 技術 |
+|---------|------|
+| フロントエンド | React 19 + TypeScript 5.9 + Vite 7 |
+| スタイリング | Tailwind CSS 4 |
+| 地図 | Leaflet 1.9 + react-leaflet 5 + leaflet.markercluster + OpenStreetMap |
+| バックエンド | Cloudflare Workers (`worker/index.ts`) |
+| データストア | Cloudflare KV (`PHARMACY_DATA` namespace) |
+| データ取得 | xlsx（Excel解析） + cheerio（HTMLスクレイピング） |
+| ジオコーディング | 国土地理院API (`msearch.gsi.go.jp`) |
+| 画像処理 | sharp（OGP画像生成） |
+| ビルド統合 | `@cloudflare/vite-plugin`（フロント・Worker を一体管理） |
+| 自動更新 | GitHub Actions（毎日 UTC 21:00 = JST 6:00） |
+
+## 要件
+
+- Node.js 20 以上（GitHub Actions では Node.js 20 を使用）
+- npm
+- デプロイ・KV操作を行う場合は Cloudflare アカウントと `wrangler` の認証
 
 ## セットアップ
 
@@ -27,14 +44,14 @@
 npm install
 ```
 
-### 2. KV Namespaceの作成
+### 2. KV Namespace の作成
 
 ```bash
 npx wrangler kv namespace create PHARMACY_DATA
 npx wrangler kv namespace create PHARMACY_DATA --preview
 ```
 
-作成されたIDを `wrangler.jsonc` に設定してください。
+作成された ID を `wrangler.jsonc` の `kv_namespaces` に設定してください。
 
 ### 3. 開発サーバーの起動
 
@@ -42,99 +59,101 @@ npx wrangler kv namespace create PHARMACY_DATA --preview
 npm run dev
 ```
 
+Vite と Cloudflare Workers のローカルランタイムが `@cloudflare/vite-plugin` により一体で起動します。ローカルでは `public/data/` のフォールバック JSON が使われます。
+
 ### 4. デプロイ
 
 ```bash
 npm run deploy
 ```
 
-## 自動データ更新（GitHub Actions + Raspberry Pi self-hosted runner）
+`vite build` でフロント・Worker をビルドし、`wrangler deploy` で Cloudflare にデプロイします。
 
-日次更新のスケジュールと実行履歴は GitHub Actions に残しつつ、実際の実行は Raspberry Pi 上の self-hosted runner で行います。これにより GitHub-hosted runner の利用時間を消費せずに、既存の `schedule` / `workflow_dispatch` / 実行ログをそのまま使えます。
-
-### セットアップ手順
-
-1. **Cloudflare API Tokenを作成**
-   - [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens) にアクセス
-   - 「Create Token」→「Edit Cloudflare Workers」テンプレートを使用
-   - または以下の権限でカスタムトークンを作成:
-     - Account > Workers KV Storage > Edit
-     - Account > Workers Scripts > Edit
-
-2. **GitHubリポジトリのSecretsを設定**
-    - リポジトリの Settings > Secrets and variables > Actions
-    - 以下のSecretsを追加:
-
-   | Secret名 | 値 |
-   |----------|-----|
-    | `CLOUDFLARE_API_TOKEN` | 作成したAPIトークン |
-    | `CLOUDFLARE_ACCOUNT_ID` | `6f2f1ee8a618e7fcb9f6737c3a84c526` |
-    | `KV_NAMESPACE_ID` | `fc31f846ec04459795c527ed04d9fd8f` |
-
-3. **Raspberry Pi に self-hosted runner を追加**
-   - リポジトリの Settings > Actions > Runners > **New self-hosted runner**
-   - OS は **Linux**、Architecture は **ARM64** を選択
-   - GitHub が表示するコマンドを Raspberry Pi 上で順に実行して runner を登録
-   - runner には custom label として `pharmacy-data-update` を付ける
-   - このリポジトリの更新 workflow は `runs-on: [self-hosted, linux, ARM64, pharmacy-data-update]` を使うため、label が一致しないとジョブを拾いません
-
-4. **runner をサービス化して自動起動させる**
-   - runner のセットアップ完了後、runner ディレクトリで以下を実行:
-
-   ```bash
-   sudo ./svc.sh install
-   sudo ./svc.sh start
-   sudo ./svc.sh status
-   ```
-
-   - GitHub のドキュメントどおり、Linux では `svc.sh` で systemd service として登録できます
-
-5. **Raspberry Pi 側の最低限の前提を用意**
-   - `git` をインストールしておく
-   - GitHub Actions 側で `actions/setup-node@v4` により Node.js 20 を入れるため、Node.js を手動で固定配置しなくても workflow 自体は動かせます
-   - Cloudflare の認証情報は引き続き GitHub Actions Secrets から渡すので、Raspberry Pi に別の `.env` を置く必要はありません
-
-6. **手動実行でテスト**
-    - Actions タブ > 「Update Pharmacy Data」 > 「Run workflow」
-
-### スケジュール
-
-- 毎日 UTC 21:00（日本時間 6:00）に自動実行
-- 手動実行も可能（workflow_dispatch）
-
-### 運用上の注意
-
-- GitHub Docs では self-hosted runner は private repository での利用が推奨されています。public repository で使う場合は、fork / PR 由来の untrusted code をこの runner で実行しないようにしてください
-- `pharmacy-data-update` ラベルはこの日次更新 job 専用にし、他の workflow から安易に共有しない方が安全です
-- runner が offline の間は schedule は失敗するため、GitHub の Actions 画面で runner 状態を確認できるようにしておくと運用しやすいです
-- summary 生成は `node` で行うようにしているため、Raspberry Pi に `jq` を別途入れなくても動きます
-
-## 手動データ更新
+## 開発コマンド
 
 ```bash
-# データを取得・変換（ローカル、最初の500件のみジオコーディング）
+npm run dev            # 開発サーバー起動（Vite + Workers ローカル）
+npm run build          # プロダクションビルド（vite build）
+npm run preview        # ビルド成果物のプレビュー
+npm run deploy         # ビルド + Cloudflare へデプロイ（vite build && wrangler deploy）
+npm run lint           # ESLint 実行（eslint .）
+npm run fetch-data     # 厚労省からデータ取得・変換（先頭500件をジオコーディング）
+npm run generate-ogp   # OGP画像を再生成（sharp）
+npm run cf-typegen     # Cloudflare の型を生成（wrangler types）
+```
+
+型チェックは TypeScript の project references を使って `npx tsc -b` で実行できます（専用の npm スクリプトはありません）。
+
+## プロジェクト構成
+
+```
+├── src/                    # フロントエンド (React)
+│   ├── App.tsx             # メインアプリ
+│   ├── main.tsx            # エントリポイント（StrictMode）
+│   ├── index.css           # グローバルスタイル（Tailwind import + カスタムアニメーション）
+│   ├── components/         # UI コンポーネント（Header/Map/PharmacyList/FAQ など）
+│   ├── hooks/              # useGeolocation / usePharmacies / useDebounce
+│   ├── types/pharmacy.ts   # 型定義（Pharmacy, PharmacyMeta ほか）
+│   └── utils/              # distance.ts（Haversine距離）/ pharmacyAvailability.ts
+├── worker/                 # バックエンド (Cloudflare Workers)
+│   ├── index.ts            # API ルーティング + ルートページのプリレンダリング注入
+│   ├── types.ts            # Env 型定義、KV キー定数
+│   └── lib/                # excel-parser.ts / geocoder.ts
+├── scripts/                # fetch-data.ts / generate-ogp.ts / check-headers.ts
+├── public/                 # 静的アセット（data/ のフォールバックJSON、robots.txt、sitemap.xml、OGP画像 など）
+├── .github/workflows/      # update-data.yml（データ自動更新）
+├── index.html              # HTMLテンプレート（SEOメタ・JSON-LD・noscript）
+├── wrangler.jsonc          # Cloudflare Workers 設定
+├── vite.config.ts          # Vite 設定（React + Tailwind + Cloudflare）
+├── tsconfig*.json          # TypeScript 設定（app / node / worker の project references）
+└── eslint.config.js        # ESLint 設定
+```
+
+## API エンドポイント
+
+全 API は CORS `Access-Control-Allow-Origin: *` で公開されています。
+
+| メソッド | パス | 例 | 説明 |
+|---------|------|-----|------|
+| GET | `/api/pharmacies` | — | 全薬局データ取得 |
+| GET | `/api/pharmacies` | `?prefecture=東京都` | 都道府県フィルター |
+| GET | `/api/pharmacies` | `?lat=35.68&lng=139.76&radius=5` | 位置検索（半径km） |
+| GET | `/api/pharmacies` | `?query=薬局名` | フリーワード検索（名前・住所） |
+| GET | `/api/meta` | — | メタ情報（lastUpdated, totalCount, sourceUrl ほか） |
+| GET | `/api/prefectures` | — | 都道府県ごとの薬局数 |
+
+## データ更新
+
+### 自動更新（GitHub Actions）
+
+`.github/workflows/update-data.yml` が毎日 UTC 21:00（JST 6:00）に実行され（`workflow_dispatch` による手動実行も可能）、以下を行います。
+
+1. `GEOCODE_ALL=true npm run fetch-data` で全薬局データを取得・ジオコーディング
+2. データに変更があれば `wrangler kv key put` で `pharmacies` / `meta` を Cloudflare KV にアップロード
+3. `public/data/meta.json` の更新をコミット
+4. GitHub Actions のサマリーに件数・更新日を出力
+
+必要な GitHub Secrets:
+
+| Secret 名 | 用途 |
+|-----------|------|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API 認証（Workers KV Storage: Edit / Workers Scripts: Edit） |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare アカウント ID |
+| `KV_NAMESPACE_ID` | 本番 KV Namespace の ID |
+
+### 手動更新
+
+```bash
+# データを取得・変換（ローカル、先頭500件のみジオコーディング）
 npm run fetch-data
 
 # 全件ジオコーディング（時間がかかります）
 GEOCODE_ALL=true npm run fetch-data
 
-# KVにアップロード
-npx wrangler kv key put --namespace-id=fc31f846ec04459795c527ed04d9fd8f --remote pharmacies --path=public/data/pharmacies.json
-npx wrangler kv key put --namespace-id=fc31f846ec04459795c527ed04d9fd8f --remote meta --path=public/data/meta.json
+# KV にアップロード
+npx wrangler kv key put --namespace-id=<KV_NAMESPACE_ID> --remote pharmacies --path=public/data/pharmacies.json
+npx wrangler kv key put --namespace-id=<KV_NAMESPACE_ID> --remote meta --path=public/data/meta.json
 ```
-
-## API エンドポイント
-
-- `GET /api/pharmacies` - 全薬局データ取得
-- `GET /api/pharmacies?prefecture=東京都` - 都道府県フィルター
-- `GET /api/pharmacies?lat=35.68&lng=139.76&radius=5` - 位置検索（半径5km）
-- `GET /api/pharmacies?query=薬局名` - フリーワード検索
-- `GET /api/meta` - メタ情報（最終更新日時等）
-- `GET /api/prefectures` - 都道府県ごとの薬局数
-
-## データソース
-
-- [厚生労働省 - 要指導医薬品である緊急避妊薬の販売が可能な薬局等の一覧](https://www.mhlw.go.jp/stf/kinnkyuuhininnyaku_00005.html)
 
 ## ライセンス
 
