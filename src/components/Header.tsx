@@ -28,13 +28,19 @@ export function Header({ meta }: HeaderProps) {
             <span className="sr-only">ノルレボ・レソエル72等の緊急避妊薬（アフターピル）を販売している薬局を検索できます</span>
           </div>
           <nav aria-label="ページ内リンク" className="hidden sm:flex items-center gap-4 mt-1">
+            <a href="/guide.html" className="inline-flex items-center gap-1 text-sm text-white bg-white/25 hover:bg-white/35 px-4 py-1.5 rounded-full transition-colors">
+              はじめての方へ
+            </a>
             <a href="#faq" className="inline-flex items-center gap-1 text-sm text-white bg-white/25 hover:bg-white/35 px-4 py-1.5 rounded-full transition-colors">
               <span>?</span>
               よくある質問
             </a>
           </nav>
         </div>
-        <nav aria-label="ページ内リンク" className="sm:hidden mt-2">
+        <nav aria-label="ページ内リンク" className="sm:hidden mt-2 flex flex-wrap gap-2">
+          <a href="/guide.html" className="inline-flex items-center gap-1 text-xs text-white bg-white/25 hover:bg-white/35 px-3 py-1.5 rounded-full transition-colors">
+            はじめての方へ
+          </a>
           <a href="#faq" className="inline-flex items-center gap-1 text-xs text-white bg-white/25 hover:bg-white/35 px-3 py-1.5 rounded-full transition-colors">
             <span>?</span>
             よくある質問

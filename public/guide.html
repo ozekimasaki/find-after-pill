@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>はじめての方へ | 緊急避妊薬ナビ</title>
+    <meta name="description" content="絵と短い言葉で、緊急避妊薬とこのサイトの使い方を紹介します。" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href="https://find-after-pill.com/guide.html" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://find-after-pill.com/guide.html" />
+    <meta property="og:title" content="はじめての方へ | 緊急避妊薬ナビ" />
+    <meta property="og:description" content="絵と短い言葉で、緊急避妊薬とこのサイトの使い方を紹介します。" />
+    <meta property="og:image" content="https://find-after-pill.com/guide/guide-hero.png" />
+    <meta property="og:locale" content="ja_JP" />
+    <style>
+      :root {
+        --blue: #65BBE9;
+        --blue-dark: #4AA8D9;
+        --blue-light: #EBF6FC;
+        --ink: #1f2937;
+        --mute: #4b5563;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        color: var(--ink);
+        background: #fff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body {
+        line-height: 1.4;
+      }
+
+      a { color: inherit; }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 16px;
+        background: linear-gradient(90deg, var(--blue), var(--blue-dark));
+        color: #fff;
+      }
+
+      .topbar a {
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 15px;
+      }
+
+      .topbar .home {
+        background: rgba(255,255,255,0.24);
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 13px;
+      }
+
+      .panel {
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 28px 16px 48px;
+      }
+
+      .panel-inner {
+        width: min(920px, 100%);
+        margin: 0 auto;
+        text-align: center;
+      }
+
+      .picture {
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        object-fit: cover;
+        border-radius: 28px;
+        box-shadow: 0 16px 40px rgba(74, 168, 217, 0.18);
+        background: var(--blue-light);
+      }
+
+      .hero .picture {
+        aspect-ratio: 16 / 9;
+      }
+
+      h1, h2 {
+        margin: 20px 0 8px;
+        font-size: clamp(1.7rem, 5vw, 2.6rem);
+        letter-spacing: 0.02em;
+        line-height: 1.25;
+      }
+
+      p {
+        margin: 0;
+        font-size: clamp(1.05rem, 2.6vw, 1.35rem);
+        color: var(--mute);
+      }
+
+      .step {
+        display: inline-block;
+        margin-bottom: 12px;
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: var(--blue-light);
+        color: var(--blue-dark);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .cta-wrap {
+        margin-top: 28px;
+      }
+
+      .cta {
+        display: inline-block;
+        background: var(--blue);
+        color: #fff;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 1.15rem;
+        padding: 16px 28px;
+        border-radius: 999px;
+        box-shadow: 0 8px 20px rgba(101, 187, 233, 0.45);
+      }
+
+      .cta:hover { background: var(--blue-dark); }
+
+      .note {
+        max-width: 640px;
+        margin: 20px auto 0;
+        font-size: 0.85rem;
+        color: #6b7280;
+      }
+
+      footer {
+        padding: 28px 16px 40px;
+        text-align: center;
+        background: #f8fafc;
+        color: #6b7280;
+        font-size: 13px;
+      }
+
+      footer a { color: var(--blue-dark); }
+
+      .dots {
+        position: fixed;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .dots a {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #d1d5db;
+        text-indent: -999px;
+        overflow: hidden;
+      }
+
+      .dots a:hover,
+      .dots a:focus-visible {
+        background: var(--blue);
+      }
+
+      @media (max-width: 640px) {
+        .dots { display: none; }
+        .picture { border-radius: 20px; }
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .panel { scroll-margin-top: 56px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <a href="/">緊急避妊薬ナビ</a>
+      <a class="home" href="/">薬局を探す</a>
+    </div>
+
+    <nav class="dots" aria-label="ページ内ナビ">
+      <a href="#start">はじまり</a>
+      <a href="#pill">くすり</a>
+      <a href="#time">時間</a>
+      <a href="#find">探す</a>
+      <a href="#visit">薬局</a>
+      <a href="#help">相談</a>
+    </nav>
+
+    <section class="panel hero" id="start">
+      <div class="panel-inner">
+        <img class="picture" src="/guide/guide-hero.png" alt="スマホで近くの薬局を探している人" width="1600" height="900" />
+        <h1>近くの薬局を、すぐに。</h1>
+        <p>このサイトは、緊急避妊薬を買える薬局を探す場所です。</p>
+      </div>
+    </section>
+
+    <section class="panel" id="pill">
+      <div class="panel-inner">
+        <span class="step">1</span>
+        <img class="picture" src="/guide/guide-pill.png" alt="手のひらにのった白い錠剤" width="1600" height="1200" loading="lazy" />
+        <h2>あとから飲む、避妊のくすり。</h2>
+        <p>アフターピルとも呼ばれます。</p>
+      </div>
+    </section>
+
+    <section class="panel" id="time">
+      <div class="panel-inner">
+        <span class="step">2</span>
+        <img class="picture" src="/guide/guide-time.png" alt="時計と3日をあらわす太陽" width="1600" height="1200" loading="lazy" />
+        <h2>できるだけ早く。</h2>
+        <p>72時間（3日）以内に飲みます。</p>
+      </div>
+    </section>
+
+    <section class="panel" id="find">
+      <div class="panel-inner">
+        <span class="step">3</span>
+        <img class="picture" src="/guide/guide-map.png" alt="街の地図と薬局のピン" width="1600" height="1200" loading="lazy" />
+        <h2>いまいる場所から探せる。</h2>
+        <p>都道府県や名前でも探せます。</p>
+      </div>
+    </section>
+
+    <section class="panel" id="visit">
+      <div class="panel-inner">
+        <span class="step">4</span>
+        <img class="picture" src="/guide/guide-visit.png" alt="個室で薬剤師と静かに話している様子" width="1600" height="1200" loading="lazy" />
+        <h2>薬局で、静かに説明を受ける。</h2>
+        <p>本人確認ができるものが必要です。</p>
+      </div>
+    </section>
+
+    <section class="panel" id="help">
+      <div class="panel-inner">
+        <span class="step">5</span>
+        <img class="picture" src="/guide/guide-help.png" alt="スマートフォンを持つ手と小さなハート" width="1600" height="1200" loading="lazy" />
+        <h2>ひとりで抱えなくていい。</h2>
+        <p>困ったら <a href="tel:8103">#8103</a> に電話できます。</p>
+        <div class="cta-wrap">
+          <a class="cta" href="/">薬局を探す</a>
+        </div>
+        <p class="note">16歳以上が対象です。価格や在庫は薬局によって違います。くわしくは<a href="/#faq">よくある質問</a>へ。</p>
+      </div>
+    </section>
+
+    <footer>
+      <p>データは厚生労働省の公開一覧にもとづきます。</p>
+      <p style="margin-top:8px"><a href="/">トップへ戻る</a></p>
+    </footer>
+  </body>
+</html>

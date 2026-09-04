@@ -12,6 +12,11 @@ export function Footer() {
               を元に、薬局を検索しやすくしたものです。
             </p>
             <p className="text-sm mt-2">
+              <a href="/guide.html" className="text-[#65BBE9] hover:text-[#EBF6FC] underline">
+                はじめての方へ（絵で見る）
+              </a>
+            </p>
+            <p className="text-sm mt-2">
               データは定期的に更新されますが、最新の情報は
               <a
                 href="https://www.mhlw.go.jp/stf/kinnkyuuhininnyaku_00005.html"
