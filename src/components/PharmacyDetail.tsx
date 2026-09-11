@@ -3,6 +3,7 @@ import type { PharmacyWithDistance } from '../types/pharmacy';
 import { formatDistance } from '../utils/distance';
 import { isLikelyOpenNow } from '../utils/pharmacyAvailability';
 import { toTelHref, formatPhoneDisplay } from '../utils/phone';
+import { formatPharmacyAddress } from '../utils/formatAddress';
 
 interface PharmacyDetailProps {
   pharmacy: PharmacyWithDistance;
@@ -129,7 +130,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
 
   // Share / Copy
   const handleShare = async () => {
-    const shareText = `${pharmacy.name}\n${pharmacy.address}\n${pharmacy.phone ? formatPhoneDisplay(pharmacy.phone) : ''}`.trim();
+    const shareText = `${pharmacy.name}\n${formatPharmacyAddress(pharmacy.address)}\n${pharmacy.phone ? formatPhoneDisplay(pharmacy.phone) : ''}`.trim();
     if (navigator.share) {
       try {
         await navigator.share({ text: shareText });
@@ -207,7 +208,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
               label="住所"
               value={
                 <span className="inline-block w-fit max-w-full break-words">
-                  {pharmacy.address.normalize('NFKC')}
+                  {formatPharmacyAddress(pharmacy.address)}
                 </span>
               }
             />

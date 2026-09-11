@@ -23,6 +23,7 @@ interface PharmacyListProps {
   onSelectPharmacy: (pharmacy: PharmacyWithDistance) => void;
   showUnmeasuredDistance?: boolean;
   groupByMunicipality?: boolean;
+  preferredMunicipality?: string | null;
   emptyActions?: PharmacyListEmptyActions;
 }
 
@@ -58,6 +59,7 @@ export function PharmacyList({
   onSelectPharmacy,
   showUnmeasuredDistance = false,
   groupByMunicipality = false,
+  preferredMunicipality = null,
   emptyActions,
 }: PharmacyListProps) {
   const resultKey = `${pharmacies.length}:${pharmacies[0]?.id ?? ''}:${pharmacies[pharmacies.length - 1]?.id ?? ''}`;
@@ -181,6 +183,7 @@ export function PharmacyList({
               {showHeader && (
                 <p className="text-sm font-medium text-gray-500 px-1 pb-1.5 scroll-mt-24 md:scroll-mt-40">
                   {city}
+                  {preferredMunicipality === city ? ' · 現在地付近' : ''}
                 </p>
               )}
               <PharmacyCard

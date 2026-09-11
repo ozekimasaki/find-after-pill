@@ -2,6 +2,7 @@ import type { PharmacyWithDistance } from '../types/pharmacy';
 import { formatDistance } from '../utils/distance';
 import { formatTodayHours, hasAfterHoursSupport, isLikelyOpenNow } from '../utils/pharmacyAvailability';
 import { toTelHref, formatPhoneDisplay } from '../utils/phone';
+import { formatPharmacyAddress } from '../utils/formatAddress';
 
 interface PharmacyCardProps {
   pharmacy: PharmacyWithDistance;
@@ -48,7 +49,7 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
 
       <div className="mt-1.5 flex items-start justify-between gap-3">
         <p className="min-w-0 text-gray-600 text-sm break-words leading-snug">
-          {pharmacy.address.normalize('NFKC')}
+          {formatPharmacyAddress(pharmacy.address)}
         </p>
         <div className="flex shrink-0 items-center gap-3 pt-0.5">
           <a

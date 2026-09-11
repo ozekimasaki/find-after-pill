@@ -13,6 +13,7 @@ import { isLikelyInJapan } from '../utils/japanBounds';
 import { isLikelyOpenNow, supportsAfterHoursFilter } from '../utils/pharmacyAvailability';
 import { pharmacyMatchesQuery } from '../utils/searchText';
 import { extractMunicipality } from '../utils/municipality';
+import { matchKnownMunicipality } from '../utils/reverseMunicipality';
 import { dedupePharmacies } from '../utils/pharmacyIdentity';
 
 export type LocationFallback = 'none' | 'ungeocoded' | 'prefecture';
@@ -50,7 +51,8 @@ function prefectureSortIndex(prefecture: string): number {
  */
 export function usePharmacies(
   userLocation?: GeoLocation | null,
-  initialParams: SearchParams = {}
+  initialParams: SearchParams = {},
+  preferredMunicipality?: string | null,
 ): UsePharmaciesReturn {
   const [allPharmacies, setAllPharmacies] = useState<Pharmacy[]>([]);
   const [meta, setMeta] = useState<PharmacyMeta | null>(null);
@@ -224,9 +226,20 @@ export function usePharmacies(
         const city = extractMunicipality(pharmacy.address, pharmacy.prefecture) ?? 'その他';
         cityCounts[city] = (cityCounts[city] || 0) + 1;
       }
+      const preferredCity = preferredMunicipality
+        ? matchKnownMunicipality(preferredMunicipality, cityCounts)
+        : null;
       result.sort((a, b) => {
         const cityA = extractMunicipality(a.address, a.prefecture) ?? 'その他';
         const cityB = extractMunicipality(b.address, b.prefecture) ?? 'その他';
+        if (preferredCity) {
+          if (cityA === preferredCity && cityB !== preferredCity) {
+            return -1;
+          }
+          if (cityB === preferredCity && cityA !== preferredCity) {
+            return 1;
+          }
+        }
         const countDelta = (cityCounts[cityB] || 0) - (cityCounts[cityA] || 0);
         if (countDelta !== 0) {
           return countDelta;
@@ -255,7 +268,7 @@ export function usePharmacies(
         nearbyPrefectures,
       },
     };
-  }, [allPharmacies, searchParams, userLocation]);
+  }, [allPharmacies, searchParams, userLocation, preferredMunicipality]);
 
   // 都道府県ごとの薬局数
   const prefectureCounts = useMemo(() => {

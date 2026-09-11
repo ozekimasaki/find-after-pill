@@ -3,16 +3,28 @@ import { useState } from 'react';
 interface MunicipalityChipsProps {
   counts: Record<string, number>;
   selected?: string;
+  preferred?: string | null;
   onSelect: (municipality: string) => void;
 }
 
 const PREVIEW_COUNT = 8;
 
-export function MunicipalityChips({ counts, selected, onSelect }: MunicipalityChipsProps) {
+export function MunicipalityChips({
+  counts,
+  selected,
+  preferred,
+  onSelect,
+}: MunicipalityChipsProps) {
   const [expanded, setExpanded] = useState(false);
-  const cities = Object.entries(counts)
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ja'))
-    .slice(0, 24);
+  const ranked = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ja'));
+  const preferredEntry = preferred && counts[preferred]
+    ? ranked.find(([name]) => name === preferred)
+    : undefined;
+  const rest = preferredEntry
+    ? ranked.filter(([name]) => name !== preferredEntry[0])
+    : ranked;
+  const cities = (preferredEntry ? [preferredEntry, ...rest] : ranked).slice(0, 24);
 
   if (cities.length < 2) {
     return null;
@@ -23,9 +35,16 @@ export function MunicipalityChips({ counts, selected, onSelect }: MunicipalityCh
   return (
     <div className="mb-2">
       <p className="sr-only">市区町村で絞り込む</p>
-      <div className="flex flex-wrap gap-1.5">
+      <div
+        className={
+          expanded
+            ? 'flex flex-wrap gap-1.5'
+            : 'flex flex-nowrap gap-1.5 overflow-x-auto overscroll-x-contain filter-chip-scroll'
+        }
+      >
         {visible.map(([name, count]) => {
           const isActive = selected === name;
+          const isPreferred = preferred === name;
           return (
             <button
               key={name}
@@ -43,6 +62,9 @@ export function MunicipalityChips({ counts, selected, onSelect }: MunicipalityCh
               <span className={isActive ? 'text-white/90' : 'text-gray-400'}>
                 {count.toLocaleString()}
               </span>
+              {isPreferred && !isActive && (
+                <span className="text-[#4AA8D9]">近く</span>
+              )}
             </button>
           );
         })}
@@ -50,7 +72,7 @@ export function MunicipalityChips({ counts, selected, onSelect }: MunicipalityCh
           <button
             type="button"
             onClick={() => setExpanded((current) => !current)}
-            className="inline-flex items-center px-2 py-0.5 text-sm text-[#4AA8D9] rounded-full border border-transparent hover:bg-[#EBF6FC]"
+            className="inline-flex items-center px-2 py-0.5 text-sm text-[#4AA8D9] rounded-full border border-transparent hover:bg-[#EBF6FC] shrink-0"
           >
             {expanded ? 'とじる' : `ほか${cities.length - PREVIEW_COUNT}の市区`}
           </button>

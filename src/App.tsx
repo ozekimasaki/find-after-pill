@@ -13,9 +13,11 @@ import { PharmacyDetail } from './components/PharmacyDetail';
 import { MunicipalityChips } from './components/MunicipalityChips';
 import { useGeolocation } from './hooks/useGeolocation';
 import { usePharmacies } from './hooks/usePharmacies';
+import { useReverseMunicipality } from './hooks/useReverseMunicipality';
 import { useDebounce } from './hooks/useDebounce';
 import { isAfterHoursJst } from './utils/pharmacyAvailability';
 import { inferPrefecture } from './utils/prefectureFromLocation';
+import { matchKnownMunicipality } from './utils/reverseMunicipality';
 import {
   DEFAULT_RADIUS,
   RADIUS_OPTIONS,
@@ -56,6 +58,8 @@ function App() {
     clearLocation: clearLocationBase,
   } = useGeolocation();
 
+  const inferredMunicipality = useReverseMunicipality(userLocation);
+
   const {
     pharmacies,
     meta,
@@ -68,7 +72,7 @@ function App() {
     locationSearch,
     loadedCount,
     municipalityCounts,
-  } = usePharmacies(userLocation, initialParamsRef.current);
+  } = usePharmacies(userLocation, initialParamsRef.current, inferredMunicipality);
 
   const debouncedQuery = useDebounce(queryInput, 300);
 
@@ -96,6 +100,13 @@ function App() {
     setSearchParams({ prefecture: inferredPrefecture, prefectureIsHint: true });
   }, [userLocation, inferredPrefecture, searchParams.prefecture, setSearchParams]);
 
+  const preferredCity = inferredMunicipality
+    ? matchKnownMunicipality(inferredMunicipality, municipalityCounts)
+    : null;
+  const cityQuery = searchParams.query && municipalityCounts[searchParams.query]
+    ? searchParams.query
+    : undefined;
+  const locationLabel = preferredCity || inferredPrefecture;
   const extraFilterCount = [
     searchParams.openNowOnly,
     searchParams.afterHoursOnly,
@@ -303,7 +314,7 @@ function App() {
               {userLocation && (
                 <div className="flex flex-wrap items-center gap-2 mb-2 text-xs text-gray-500">
                   <span className="shrink-0">
-                    現在地{inferredPrefecture ? `（${inferredPrefecture}）` : ''}
+                    現在地{locationLabel ? `（${locationLabel}）` : ''}
                   </span>
                   <button
                     type="button"
@@ -407,6 +418,11 @@ function App() {
         >
           {loading ? (
             <span className="text-gray-400">お近くの薬局を探しています...</span>
+          ) : cityQuery ? (
+            <span>
+              <strong className="text-gray-900">{cityQuery}</strong>
+              {' '}<strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong>件
+            </span>
           ) : userLocation && searchParams.radius && locationSearch.fallback === 'prefecture' && locationSearch.prefecture ? (
             <span>
               <strong className="text-gray-900">{locationSearch.prefecture}</strong>
@@ -475,6 +491,7 @@ function App() {
           <MunicipalityChips
             counts={municipalityCounts}
             selected={queryInput}
+            preferred={preferredCity}
             onSelect={handleMunicipalitySelect}
           />
         )}
@@ -523,6 +540,7 @@ function App() {
                 || (!userLocation && !!searchParams.prefecture)
               )
             }
+            preferredMunicipality={preferredCity}
             showUnmeasuredDistance={
               !!userLocation && pharmacies.some((pharmacy) => pharmacy.distance !== undefined)
             }
