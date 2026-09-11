@@ -23,6 +23,7 @@ export function MunicipalityChips({ counts, selected, onSelect }: MunicipalityCh
             <button
               key={name}
               type="button"
+              onMouseDown={(event) => event.preventDefault()}
               onClick={() => onSelect(name)}
               aria-pressed={isActive}
               className={`inline-flex shrink-0 items-center gap-1 px-2.5 py-1 text-sm rounded-full border whitespace-nowrap ${
