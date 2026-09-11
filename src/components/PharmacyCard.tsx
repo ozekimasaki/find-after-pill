@@ -10,11 +10,16 @@ interface PharmacyCardProps {
 }
 
 function formatShortHours(hours: string): string {
-  const parts = hours.split(/[､、,]/);
+  const normalized = hours.normalize('NFKC').replace(/\s+/g, '');
+  const parts = normalized.split(/[､、,／/]/);
+  const first = parts[0] ?? hours;
   if (parts.length > 1) {
-    return parts[0] + ' 他';
+    return `${first} 他`;
   }
-  return hours;
+  if (first.length > 22) {
+    return `${first.slice(0, 22)}…`;
+  }
+  return first;
 }
 
 export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: PharmacyCardProps) {
@@ -61,7 +66,7 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
         onClick={(e) => e.stopPropagation()}
         className="mt-2 block w-fit max-w-full break-words text-gray-600 text-sm hover:text-[#65BBE9] transition-colors"
       >
-        {pharmacy.address}
+        {pharmacy.address.normalize('NFKC')}
       </a>
 
       {/* 追加情報バッジ */}

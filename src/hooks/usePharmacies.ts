@@ -13,6 +13,7 @@ import { isLikelyInJapan } from '../utils/japanBounds';
 import { isLikelyOpenNow, supportsAfterHoursFilter } from '../utils/pharmacyAvailability';
 import { pharmacyMatchesQuery } from '../utils/searchText';
 import { extractMunicipality } from '../utils/municipality';
+import { dedupePharmacies } from '../utils/pharmacyIdentity';
 
 export type LocationFallback = 'none' | 'ungeocoded' | 'prefecture';
 
@@ -69,7 +70,7 @@ export function usePharmacies(
       }
 
       const data = await response.json();
-      setAllPharmacies(data.pharmacies || []);
+      setAllPharmacies(dedupePharmacies(data.pharmacies || []));
       setMeta(data.meta || null);
     } catch (err) {
       console.error('Failed to fetch pharmacies:', err);

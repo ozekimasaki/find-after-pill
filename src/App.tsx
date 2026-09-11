@@ -45,6 +45,8 @@ function App() {
   const resultAreaRef = useRef<HTMLDivElement>(null);
   const initialParamsRef = useRef(urlInit.searchParams);
   const userFilterRef = useRef(false);
+  const autoPrefRef = useRef<string | null>(null);
+  const autoPrefClearedRef = useRef(false);
 
   const {
     location: userLocation,
@@ -83,6 +85,17 @@ function App() {
     [userLocation]
   );
 
+  useEffect(() => {
+    if (!userLocation || !inferredPrefecture) {
+      return;
+    }
+    if (searchParams.prefecture || autoPrefClearedRef.current) {
+      return;
+    }
+    autoPrefRef.current = inferredPrefecture;
+    setSearchParams({ prefecture: inferredPrefecture });
+  }, [userLocation, inferredPrefecture, searchParams.prefecture, setSearchParams]);
+
   const extraFilterCount = [
     searchParams.openNowOnly,
     searchParams.afterHoursOnly,
@@ -104,6 +117,8 @@ function App() {
 
   const handlePrefectureChange = useCallback((prefecture: string) => {
     userFilterRef.current = true;
+    autoPrefRef.current = null;
+    autoPrefClearedRef.current = !prefecture;
     setSearchParams({ prefecture: prefecture || undefined });
   }, [setSearchParams]);
 
@@ -115,11 +130,18 @@ function App() {
 
   const handleClearLocation = useCallback(() => {
     clearLocationBase();
-    setSearchParams({ radius: undefined });
+    const clearAutoPref = autoPrefRef.current && searchParams.prefecture === autoPrefRef.current;
+    autoPrefRef.current = null;
+    autoPrefClearedRef.current = false;
+    setSearchParams({
+      radius: undefined,
+      prefecture: clearAutoPref ? undefined : searchParams.prefecture,
+    });
     setRadius(DEFAULT_RADIUS);
-  }, [clearLocationBase, setSearchParams]);
+  }, [clearLocationBase, setSearchParams, searchParams.prefecture]);
 
   const handleGetCurrentLocation = useCallback(() => {
+    autoPrefClearedRef.current = false;
     getCurrentLocation();
     setSearchParams({ radius });
   }, [getCurrentLocation, setSearchParams, radius]);
@@ -303,7 +325,7 @@ function App() {
                 <div className="min-w-0 flex-1 md:col-span-2">
                   <SearchBar value={queryInput} onChange={setQueryInput} />
                 </div>
-                <div className="w-[8.5rem] shrink-0 md:w-auto">
+                <div className="w-[9.25rem] shrink-0 md:w-auto">
                   <PrefectureFilter
                     value={searchParams.prefecture || ''}
                     onChange={handlePrefectureChange}
@@ -372,9 +394,9 @@ function App() {
             <span className="text-gray-400">お近くの薬局を探しています...</span>
           ) : userLocation && searchParams.radius && locationSearch.fallback === 'prefecture' && locationSearch.prefecture ? (
             <span>
-              {searchParams.radius}km以内の地図登録は見つかりませんでした。
               <strong className="text-gray-900">{locationSearch.prefecture}</strong>の
-              {' '}<strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong> 件を表示しています
+              {' '}<strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong> 件
+              （{searchParams.radius}km以内の地図登録なし）
             </span>
           ) : userLocation && searchParams.radius && locationSearch.fallback === 'ungeocoded' ? (
             <span>
@@ -417,7 +439,7 @@ function App() {
 
         {userLocation && locationSearch.fallback === 'prefecture' && locationSearch.prefecture && (
           <div className="mb-3 px-3 py-2 text-sm bg-[#EBF6FC] text-gray-700 rounded-lg">
-            近くの地図登録が見つからなかったため、{locationSearch.prefecture}の薬局を表示しています。距離が分かる薬局から順に並んでいます。
+            近くの地図ピンは見つかりませんでした。{locationSearch.prefecture}の薬局を、距離が分かる順に表示しています。
           </div>
         )}
 
@@ -458,7 +480,7 @@ function App() {
             role="tab"
             aria-selected={viewMode === 'list'}
             onClick={() => setViewMode('list')}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+            className={`flex-1 py-1.5 px-3 rounded-lg font-medium text-sm transition-colors ${
               viewMode === 'list'
                 ? 'bg-[#65BBE9] text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
@@ -476,7 +498,7 @@ function App() {
             role="tab"
             aria-selected={viewMode === 'map'}
             onClick={() => setViewMode('map')}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
+            className={`flex-1 py-1.5 px-3 rounded-lg font-medium text-sm transition-colors ${
               viewMode === 'map'
                 ? 'bg-[#65BBE9] text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
