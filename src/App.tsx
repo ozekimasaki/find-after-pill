@@ -58,7 +58,8 @@ function App() {
     clearLocation: clearLocationBase,
   } = useGeolocation();
 
-  const inferredMunicipality = useReverseMunicipality(userLocation);
+  const inferredMunicipalityState = useReverseMunicipality(userLocation);
+  const inferredMunicipality = inferredMunicipalityState.city;
 
   const {
     pharmacies,
@@ -228,7 +229,7 @@ function App() {
       const y = window.scrollY;
       setShowBackToTop(y > 400);
       setScrolled(y > 80);
-      if (y <= 80) {
+      if (y > 80) {
         setFiltersPinned(false);
       }
     };
@@ -280,7 +281,7 @@ function App() {
       >
         検索結果へスキップ
       </a>
-      <Header meta={meta} loadedCount={loadedCount} />
+      <Header meta={meta} loadedCount={loadedCount} compact={!!userLocation} />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-4 sm:py-6">
         {!userLocation && <SupportBanner />}
@@ -347,10 +348,28 @@ function App() {
                   </div>
                 </div>
               )}
-              <div className="flex gap-2 md:grid md:grid-cols-3 md:gap-3">
+              <div className="flex gap-2 md:grid md:grid-cols-3 md:gap-3 items-center">
                 <div className="min-w-0 flex-1 md:col-span-2">
                   <SearchBar value={queryInput} onChange={setQueryInput} />
                 </div>
+                {userLocation && !extrasOpen && (
+                  <button
+                    type="button"
+                    onClick={() => setFiltersPinned(true)}
+                    className="md:hidden shrink-0 text-sm text-[#4AA8D9] whitespace-nowrap"
+                  >
+                    絞り込み{extraFilterCount > 0 ? `（${extraFilterCount}）` : ''}
+                  </button>
+                )}
+                {userLocation && extrasOpen && (
+                  <button
+                    type="button"
+                    onClick={() => setFiltersPinned(false)}
+                    className="md:hidden shrink-0 text-sm text-[#4AA8D9] whitespace-nowrap"
+                  >
+                    とじる
+                  </button>
+                )}
                 <div className={`w-[9.25rem] shrink-0 md:w-auto ${userLocation ? 'hidden md:block' : ''}`}>
                   <PrefectureFilter
                     value={searchParams.prefecture || ''}
@@ -359,21 +378,11 @@ function App() {
                   />
                 </div>
               </div>
-              {!extrasOpen && (
-                <div className="mt-1.5 md:hidden">
-                  <button
-                    type="button"
-                    onClick={() => setFiltersPinned(true)}
-                    className="text-sm text-[#4AA8D9]"
-                  >
-                    絞り込みを表示{extraFilterCount > 0 ? `（${extraFilterCount}）` : ''}
-                  </button>
-                </div>
-              )}
               <div className={extrasOpen ? 'block' : 'hidden md:block'}>
-              {userLocation && (
+              {userLocation && extrasOpen && (
                 <div className="mt-2 md:hidden">
                   <PrefectureFilter
+                    selectId="prefecture-select-extra"
                     value={searchParams.prefecture || ''}
                     onChange={handlePrefectureChange}
                     counts={prefectureCounts}
@@ -423,7 +432,7 @@ function App() {
         <div
           id="results"
           ref={resultAreaRef}
-          className="min-w-0 flex-1 text-sm text-gray-600 transition-opacity duration-200 scroll-mt-36 md:scroll-mt-44"
+          className="min-w-0 flex-1 text-sm text-gray-600 transition-opacity duration-200 scroll-mt-32 md:scroll-mt-44"
           aria-live="polite"
         >
           {loading ? (
@@ -437,6 +446,9 @@ function App() {
             <span>
               <strong className="text-gray-900">{locationSearch.prefecture}</strong>
               {' '}<strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong>件
+              {preferredCity ? (
+                <span className="text-gray-400"> · {preferredCity}を先頭に</span>
+              ) : null}
             </span>
           ) : userLocation && searchParams.radius && locationSearch.fallback === 'ungeocoded' ? (
             <span>
@@ -525,7 +537,9 @@ function App() {
           </div>
         )}
 
-        {(searchParams.prefecture || userLocation) && (
+        {viewMode === 'list'
+          && (searchParams.prefecture || userLocation)
+          && (!userLocation || inferredMunicipalityState.ready) && (
           <MunicipalityChips
             counts={municipalityCounts}
             selected={queryInput}
