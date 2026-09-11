@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { compareMunicipalityNames } from '../utils/municipalityRank';
 
 interface MunicipalityChipsProps {
   counts: Record<string, number>;
@@ -9,6 +10,30 @@ interface MunicipalityChipsProps {
 
 const PREVIEW_COUNT = 4;
 
+function pickPreview(
+  cities: Array<[string, number]>,
+  selected?: string,
+  preferred?: string | null,
+): Array<[string, number]> {
+  const picked: Array<[string, number]> = [];
+  const used = new Set<string>();
+
+  const add = (entry: [string, number] | undefined) => {
+    if (!entry || used.has(entry[0]) || picked.length >= PREVIEW_COUNT) {
+      return;
+    }
+    used.add(entry[0]);
+    picked.push(entry);
+  };
+
+  add(preferred ? cities.find(([name]) => name === preferred) : undefined);
+  add(selected ? cities.find(([name]) => name === selected) : undefined);
+  for (const entry of cities) {
+    add(entry);
+  }
+  return picked;
+}
+
 export function MunicipalityChips({
   counts,
   selected,
@@ -16,21 +41,16 @@ export function MunicipalityChips({
   onSelect,
 }: MunicipalityChipsProps) {
   const [expanded, setExpanded] = useState(false);
-  const ranked = Object.entries(counts)
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ja'));
-  const preferredEntry = preferred && counts[preferred]
-    ? ranked.find(([name]) => name === preferred)
-    : undefined;
-  const rest = preferredEntry
-    ? ranked.filter(([name]) => name !== preferredEntry[0])
-    : ranked;
-  const cities = (preferredEntry ? [preferredEntry, ...rest] : ranked).slice(0, 24);
+  const cities = Object.entries(counts)
+    .sort((a, b) => compareMunicipalityNames(a[0], b[0], preferred, counts))
+    .slice(0, 24);
 
   if (cities.length < 2) {
     return null;
   }
 
-  const visible = expanded ? cities : cities.slice(0, PREVIEW_COUNT);
+  const visible = expanded ? cities : pickPreview(cities, selected, preferred);
+  const hiddenCount = Math.max(0, cities.length - visible.length);
 
   return (
     <div className="mb-2">
@@ -67,7 +87,7 @@ export function MunicipalityChips({
             onClick={() => setExpanded((current) => !current)}
             className="inline-flex items-center px-2 py-0.5 text-xs sm:text-sm text-[#4AA8D9] rounded-full border border-transparent hover:bg-[#EBF6FC]"
           >
-            {expanded ? 'とじる' : `ほか${cities.length - PREVIEW_COUNT}の市区`}
+            {expanded ? 'とじる' : `ほか${hiddenCount}の市区`}
           </button>
         )}
       </div>

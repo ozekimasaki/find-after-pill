@@ -13,6 +13,7 @@ import { isLikelyInJapan } from '../utils/japanBounds';
 import { isLikelyOpenNow, supportsAfterHoursFilter } from '../utils/pharmacyAvailability';
 import { pharmacyMatchesQuery } from '../utils/searchText';
 import { extractMunicipality } from '../utils/municipality';
+import { compareMunicipalityNames } from '../utils/municipalityRank';
 import { matchKnownMunicipality } from '../utils/reverseMunicipality';
 import { dedupePharmacies } from '../utils/pharmacyIdentity';
 
@@ -232,20 +233,9 @@ export function usePharmacies(
       result.sort((a, b) => {
         const cityA = extractMunicipality(a.address, a.prefecture) ?? 'その他';
         const cityB = extractMunicipality(b.address, b.prefecture) ?? 'その他';
-        if (preferredCity) {
-          if (cityA === preferredCity && cityB !== preferredCity) {
-            return -1;
-          }
-          if (cityB === preferredCity && cityA !== preferredCity) {
-            return 1;
-          }
-        }
-        const countDelta = (cityCounts[cityB] || 0) - (cityCounts[cityA] || 0);
-        if (countDelta !== 0) {
-          return countDelta;
-        }
-        if (cityA !== cityB) {
-          return cityA.localeCompare(cityB, 'ja');
+        const cityDelta = compareMunicipalityNames(cityA, cityB, preferredCity, cityCounts);
+        if (cityDelta !== 0) {
+          return cityDelta;
         }
         return compareOpenThenName(a, b);
       });

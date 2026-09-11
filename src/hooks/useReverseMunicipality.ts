@@ -6,10 +6,15 @@ function locationKey(location: GeoLocation): string {
   return `${location.lat.toFixed(5)},${location.lng.toFixed(5)}`;
 }
 
+export interface ReverseMunicipalityState {
+  city: string | null;
+  ready: boolean;
+}
+
 /**
- * 現在地から市区町村名を推定する。失敗時は null のまま。
+ * 現在地から市区町村名を推定する。失敗時は city が null。
  */
-export function useReverseMunicipality(location: GeoLocation | null): string | null {
+export function useReverseMunicipality(location: GeoLocation | null): ReverseMunicipalityState {
   const [result, setResult] = useState<{ key: string; city: string | null } | null>(null);
 
   useEffect(() => {
@@ -35,9 +40,12 @@ export function useReverseMunicipality(location: GeoLocation | null): string | n
   }, [location]);
 
   if (!location) {
-    return null;
+    return { city: null, ready: true };
   }
 
   const key = locationKey(location);
-  return result?.key === key ? result.city : null;
+  if (result?.key === key) {
+    return { city: result.city, ready: true };
+  }
+  return { city: null, ready: false };
 }
