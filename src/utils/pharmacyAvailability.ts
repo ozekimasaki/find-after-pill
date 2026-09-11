@@ -166,3 +166,94 @@ export function supportsAfterHoursFilter(pharmacy: Pick<Pharmacy, 'afterHoursSer
     hasLateBusinessHours(pharmacy.businessHours)
   );
 }
+
+const WEEKDAY_CHARS = ['日', '月', '火', '水', '木', '金', '土'] as const;
+
+function expandDaysFromContext(context: string): Set<number> | null {
+  const days = new Set<number>();
+  const rangePattern = /([月火水木金土日])-([月火水木金土日])/g;
+
+  for (const match of context.matchAll(rangePattern)) {
+    const start = WEEKDAY_CHARS.indexOf(match[1] as (typeof WEEKDAY_CHARS)[number]);
+    const end = WEEKDAY_CHARS.indexOf(match[2] as (typeof WEEKDAY_CHARS)[number]);
+    if (start < 0 || end < 0) {
+      continue;
+    }
+    let cursor = start;
+    for (let step = 0; step < 7; step += 1) {
+      days.add(cursor);
+      if (cursor === end) {
+        break;
+      }
+      cursor = (cursor + 1) % 7;
+    }
+  }
+
+  for (const char of context) {
+    const index = WEEKDAY_CHARS.indexOf(char as (typeof WEEKDAY_CHARS)[number]);
+    if (index >= 0) {
+      days.add(index);
+    }
+  }
+
+  if (days.size === 0) {
+    return null;
+  }
+  return days;
+}
+
+function isMinutesInRange(nowMinutes: number, start: number, end: number): boolean {
+  if (end <= start) {
+    return nowMinutes >= start || nowMinutes < end;
+  }
+  return nowMinutes >= start && nowMinutes < end;
+}
+
+/**
+ * 開局時間文字列から「いま開局中の可能性」を推定する。
+ * 祝日や臨時休業は判定できないため、バッジ表示の目安に留める。
+ */
+export function isLikelyOpenNow(businessHours?: string | null, now: Date = new Date()): boolean {
+  if (!businessHours) {
+    return false;
+  }
+
+  const normalized = normalizeBusinessHours(businessHours);
+  if (!normalized) {
+    return false;
+  }
+
+  if (ALWAYS_OPEN_PATTERN.test(normalized) || /24時間/.test(normalized)) {
+    return true;
+  }
+
+  const { dayIndex, minutes } = getJstDayAndMinutes(now);
+  let currentContext = '';
+  let cursor = 0;
+
+  for (const match of normalized.matchAll(TIME_RANGE_PATTERN)) {
+    const index = match.index ?? 0;
+    const between = normalized.slice(cursor, index);
+    if (DAY_CONTEXT_PATTERN.test(between)) {
+      currentContext = between;
+    }
+    cursor = index + match[0].length;
+
+    if (isClosedContext(currentContext)) {
+      continue;
+    }
+
+    const days = expandDaysFromContext(currentContext);
+    if (days && !days.has(dayIndex)) {
+      continue;
+    }
+
+    const start = toMinutes(match[1], match[2]);
+    const end = toMinutes(match[3], match[4]);
+    if (isMinutesInRange(minutes, start, end)) {
+      return true;
+    }
+  }
+
+  return false;
+}

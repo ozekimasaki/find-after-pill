@@ -52,9 +52,25 @@ export function FilterPanel({ searchParams, setSearchParams }: FilterPanelProps)
       <div className="flex items-center gap-2 mb-2">
         <span className="text-sm font-medium text-gray-700">絞り込み</span>
         {activeCount > 0 && (
-          <span className="px-1.5 py-0.5 text-xs font-medium bg-[#65BBE9] text-white rounded-full">
-            {activeCount}
-          </span>
+          <>
+            <span className="px-1.5 py-0.5 text-xs font-medium bg-[#65BBE9] text-white rounded-full">
+              {activeCount}
+            </span>
+            <button
+              type="button"
+              onClick={() =>
+                setSearchParams({
+                  afterHoursOnly: false,
+                  noAdvanceCallRequired: false,
+                  femalePharmacistOnly: false,
+                  hasPrivateSpace: false,
+                })
+              }
+              className="text-xs text-[#4AA8D9] hover:text-[#65BBE9] hover:underline"
+            >
+              条件をクリア
+            </button>
+          </>
         )}
       </div>
       <div className="flex flex-wrap gap-2">
@@ -63,7 +79,9 @@ export function FilterPanel({ searchParams, setSearchParams }: FilterPanelProps)
           return (
             <button
               key={key}
+              type="button"
               onClick={() => setSearchParams({ [key]: !isActive })}
+              aria-pressed={isActive}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full border active:scale-95 transition-all duration-150 ${
                 isActive
                   ? 'bg-[#65BBE9] text-white border-transparent'

@@ -10,6 +10,7 @@ export function LocationButton({ onClick, loading, hasLocation, onClear }: Locat
     return (
       <div className="flex gap-2">
         <button
+          type="button"
           onClick={onClick}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#65BBE9] text-white rounded-lg hover:bg-[#4AA8D9] transition-colors"
         >
@@ -20,9 +21,11 @@ export function LocationButton({ onClick, loading, hasLocation, onClear }: Locat
           <span>現在地で検索中</span>
         </button>
         <button
+          type="button"
           onClick={onClear}
           className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
           title="位置情報をクリア"
+          aria-label="位置情報をクリア"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -35,6 +38,7 @@ export function LocationButton({ onClick, loading, hasLocation, onClear }: Locat
   return (
     <div>
       <button
+        type="button"
         onClick={onClick}
         disabled={loading}
         className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-[#65BBE9] text-white rounded-lg hover:bg-[#4AA8D9] transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-base"

@@ -1,13 +1,26 @@
 import { useState } from 'react';
 import type { PharmacyWithDistance } from '../types/pharmacy';
 import { PharmacyCard } from './PharmacyCard';
-import { PharmacyDetail } from './PharmacyDetail';
+
+interface PharmacyListEmptyActions {
+  nextRadius?: number;
+  onExpandRadius?: () => void;
+  afterHoursOn?: boolean;
+  onDisableAfterHours?: () => void;
+  inferredPrefecture?: string | null;
+  prefectureCount?: number;
+  onShowPrefecture?: () => void;
+  hasActiveFilters?: boolean;
+}
 
 interface PharmacyListProps {
   pharmacies: PharmacyWithDistance[];
   loading: boolean;
   error: string | null;
   onResetFilters?: () => void;
+  onRetry?: () => void;
+  onSelectPharmacy: (pharmacy: PharmacyWithDistance) => void;
+  emptyActions?: PharmacyListEmptyActions;
 }
 
 const ITEMS_PER_PAGE = 20;
@@ -33,20 +46,34 @@ function SkeletonCard() {
   );
 }
 
-export function PharmacyList({ pharmacies, loading, error, onResetFilters }: PharmacyListProps) {
+export function PharmacyList({
+  pharmacies,
+  loading,
+  error,
+  onResetFilters,
+  onRetry,
+  onSelectPharmacy,
+  emptyActions,
+}: PharmacyListProps) {
+  const resultKey = `${pharmacies.length}:${pharmacies[0]?.id ?? ''}:${pharmacies[pharmacies.length - 1]?.id ?? ''}`;
   const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE);
-  const [selectedPharmacy, setSelectedPharmacy] = useState<PharmacyWithDistance | null>(null);
+  const [seenKey, setSeenKey] = useState(resultKey);
+
+  if (resultKey !== seenKey) {
+    setSeenKey(resultKey);
+    setDisplayCount(ITEMS_PER_PAGE);
+  }
 
   const displayedPharmacies = pharmacies.slice(0, displayCount);
   const hasMore = displayCount < pharmacies.length;
 
   const loadMore = () => {
-    setDisplayCount(prev => prev + ITEMS_PER_PAGE);
+    setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
   };
 
   if (loading) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-3" aria-busy="true" aria-live="polite">
         {Array.from({ length: 4 }).map((_, i) => (
           <SkeletonCard key={i} />
         ))}
@@ -61,27 +88,64 @@ export function PharmacyList({ pharmacies, loading, error, onResetFilters }: Pha
         <p className="mt-2 text-sm text-red-600">
           しばらく経ってから再度お試しください
         </p>
+        {onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-4 px-4 py-2 text-sm text-white bg-[#65BBE9] rounded-lg hover:bg-[#4AA8D9] transition-colors"
+          >
+            再読み込み
+          </button>
+        )}
       </div>
     );
   }
 
   if (pharmacies.length === 0) {
     return (
-      <div className="bg-gray-50 rounded-lg p-8 text-center">
-        {/* 虫眼鏡アイコン（ニュートラル） */}
-        <svg className="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+        <svg className="w-16 h-16 mx-auto text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <p className="mt-4 text-gray-600 font-medium">条件に一致する薬局が見つかりませんでした</p>
-        <p className="mt-2 text-sm text-gray-500">全国に多くの対応薬局があります。条件を変えて検索してみてください。</p>
-        <ul className="mt-3 text-sm text-gray-500 space-y-1">
-          <li>検索キーワードを短くしてみてください</li>
-          <li>絞り込み条件を減らしてみてください</li>
-        </ul>
-        {onResetFilters && (
+        <p className="mt-2 text-sm text-gray-500">条件を少し変えると見つかることが多いです。</p>
+        <div className="mt-5 flex flex-col sm:flex-row gap-2 justify-center">
+          {emptyActions?.nextRadius && emptyActions.onExpandRadius && (
+            <button
+              type="button"
+              onClick={emptyActions.onExpandRadius}
+              className="px-4 py-2 text-sm text-white bg-[#65BBE9] rounded-lg hover:bg-[#4AA8D9] transition-colors"
+            >
+              検索範囲を{emptyActions.nextRadius}kmに広げる
+            </button>
+          )}
+          {emptyActions?.afterHoursOn && emptyActions.onDisableAfterHours && (
+            <button
+              type="button"
+              onClick={emptyActions.onDisableAfterHours}
+              className="px-4 py-2 text-sm text-[#4AA8D9] border border-[#65BBE9] rounded-lg hover:bg-[#EBF6FC] transition-colors"
+            >
+              夜間・休日の条件を外す
+            </button>
+          )}
+          {emptyActions?.inferredPrefecture && emptyActions.onShowPrefecture && (
+            <button
+              type="button"
+              onClick={emptyActions.onShowPrefecture}
+              className="px-4 py-2 text-sm text-[#4AA8D9] border border-[#65BBE9] rounded-lg hover:bg-[#EBF6FC] transition-colors"
+            >
+              {emptyActions.inferredPrefecture}の薬局をすべて見る
+              {emptyActions.prefectureCount
+                ? `（${emptyActions.prefectureCount.toLocaleString()}件）`
+                : ''}
+            </button>
+          )}
+        </div>
+        {onResetFilters && emptyActions?.hasActiveFilters && (
           <button
+            type="button"
             onClick={onResetFilters}
-            className="mt-4 px-4 py-2 text-sm text-[#65BBE9] border border-[#65BBE9] rounded-lg hover:bg-[#EBF6FC] transition-colors"
+            className="mt-3 px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:underline"
           >
             フィルターをリセット
           </button>
@@ -101,7 +165,7 @@ export function PharmacyList({ pharmacies, loading, error, onResetFilters }: Pha
           >
             <PharmacyCard
               pharmacy={pharmacy}
-              onClick={() => setSelectedPharmacy(pharmacy)}
+              onClick={() => onSelectPharmacy(pharmacy)}
             />
           </div>
         ))}
@@ -110,19 +174,13 @@ export function PharmacyList({ pharmacies, loading, error, onResetFilters }: Pha
       {hasMore && (
         <div className="mt-6 text-center">
           <button
+            type="button"
             onClick={loadMore}
             className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
           >
             もっと見る（残り{pharmacies.length - displayCount}件）
           </button>
         </div>
-      )}
-
-      {selectedPharmacy && (
-        <PharmacyDetail
-          pharmacy={selectedPharmacy}
-          onClose={() => setSelectedPharmacy(null)}
-        />
       )}
     </>
   );

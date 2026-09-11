@@ -30,15 +30,18 @@ function corsHeaders(): HeadersInit {
 /**
  * JSON レスポンスを返す
  */
-function jsonResponse(data: unknown, status = 200): Response {
+function jsonResponse(data: unknown, status = 200, extraHeaders: HeadersInit = {}): Response {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
       'Content-Type': 'application/json',
       ...corsHeaders(),
+      ...extraHeaders,
     },
   });
 }
+
+const API_CACHE_HEADERS = { 'Cache-Control': 'public, max-age=300' };
 
 /**
  * エラーレスポンスを返す
@@ -135,7 +138,7 @@ async function handleApiRequest(request: Request, env: Env): Promise<Response> {
           .sort((a, b) => (a as any).distance - (b as any).distance);
       }
 
-      return jsonResponse({ pharmacies, meta });
+      return jsonResponse({ pharmacies, meta }, 200, API_CACHE_HEADERS);
     } catch (error) {
       console.error('Error fetching pharmacies:', error);
       return errorResponse('Failed to fetch pharmacies');
@@ -147,7 +150,7 @@ async function handleApiRequest(request: Request, env: Env): Promise<Response> {
     try {
       const metaJson = await getLocalData(env, KV_KEYS.META);
       const meta: PharmacyMeta | null = metaJson ? JSON.parse(metaJson) : null;
-      return jsonResponse({ meta });
+      return jsonResponse({ meta }, 200, API_CACHE_HEADERS);
     } catch (error) {
       console.error('Error fetching meta:', error);
       return errorResponse('Failed to fetch meta');
@@ -169,7 +172,7 @@ async function handleApiRequest(request: Request, env: Env): Promise<Response> {
         prefectureCounts[p.prefecture] = (prefectureCounts[p.prefecture] || 0) + 1;
       }
 
-      return jsonResponse({ prefectures: prefectureCounts });
+      return jsonResponse({ prefectures: prefectureCounts }, 200, API_CACHE_HEADERS);
     } catch (error) {
       console.error('Error fetching prefectures:', error);
       return errorResponse('Failed to fetch prefectures');

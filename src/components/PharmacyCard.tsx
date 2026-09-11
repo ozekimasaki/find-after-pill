@@ -1,6 +1,7 @@
 import type { PharmacyWithDistance } from '../types/pharmacy';
 import { formatDistance } from '../utils/distance';
-import { hasAfterHoursSupport } from '../utils/pharmacyAvailability';
+import { hasAfterHoursSupport, isLikelyOpenNow } from '../utils/pharmacyAvailability';
+import { toTelHref } from '../utils/phone';
 
 interface PharmacyCardProps {
   pharmacy: PharmacyWithDistance;
@@ -24,19 +25,27 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
   };
 
   const googleMapsUrl = getGoogleMapsRouteUrl();
+  const likelyOpen = isLikelyOpenNow(pharmacy.businessHours);
 
   return (
-    <div
-      className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
+    <article
+      className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer focus-within:ring-2 focus-within:ring-[#65BBE9]"
       onClick={onClick}
     >
       <div className="flex justify-between items-start gap-2">
         <h3 className="font-bold text-gray-900 text-lg leading-tight">{pharmacy.name}</h3>
-        {pharmacy.distance !== undefined && (
-          <span className="flex-shrink-0 px-2 py-1 bg-[#EBF6FC] text-[#4AA8D9] text-sm font-medium rounded">
-            {formatDistance(pharmacy.distance)}
-          </span>
-        )}
+        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+          {likelyOpen && (
+            <span className="px-2 py-1 bg-[#EBF6FC] text-[#4AA8D9] text-xs font-medium rounded">
+              開局中の目安
+            </span>
+          )}
+          {pharmacy.distance !== undefined && (
+            <span className="px-2 py-1 bg-[#EBF6FC] text-[#4AA8D9] text-sm font-medium rounded">
+              {formatDistance(pharmacy.distance)}
+            </span>
+          )}
+        </div>
       </div>
 
       <a
@@ -52,7 +61,7 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
       {pharmacy.phone && (
         <p className="mt-1 text-gray-600 text-sm">
           <a
-            href={`tel:${pharmacy.phone}`}
+            href={toTelHref(pharmacy.phone)}
             onClick={(e) => e.stopPropagation()}
             className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline"
           >
@@ -72,7 +81,7 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
           </span>
         )}
         {hasAfterHoursSupport(pharmacy.afterHoursService) && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-purple-50 text-purple-700 rounded">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-[#EBF6FC] text-[#4AA8D9] rounded">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
             </svg>
@@ -120,6 +129,7 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
           ルートを調べる
         </a>
         <button
+          type="button"
           onClick={onClick}
           className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition-colors ml-auto"
         >
@@ -133,7 +143,7 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
       {/* 電話ボタン（全幅・独立） */}
       {pharmacy.phone && (
         <a
-          href={`tel:${pharmacy.phone}`}
+          href={toTelHref(pharmacy.phone)}
           onClick={(e) => e.stopPropagation()}
           className="mt-2 flex items-center justify-center gap-2 w-full px-4 py-3 text-base font-medium text-white bg-[#65BBE9] rounded-lg hover:bg-[#4AA8D9] transition-colors"
         >
@@ -143,6 +153,6 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
           電話で問い合わせる
         </a>
       )}
-    </div>
+    </article>
   );
 }

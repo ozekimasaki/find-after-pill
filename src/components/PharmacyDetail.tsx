@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { PharmacyWithDistance } from '../types/pharmacy';
 import { formatDistance } from '../utils/distance';
+import { isLikelyOpenNow } from '../utils/pharmacyAvailability';
+import { toTelHref } from '../utils/phone';
 
 interface PharmacyDetailProps {
   pharmacy: PharmacyWithDistance;
@@ -48,6 +50,8 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
 
   const googleMapsUrl = getGoogleMapsRouteUrl();
   const appleMapsUrl = getAppleMapsRouteUrl();
+  const titleId = 'pharmacy-detail-title';
+  const likelyOpen = isLikelyOpenNow(pharmacy.businessHours);
 
   const normalizeUrl = (url: string): string => {
     if (!url) return '';
@@ -64,11 +68,44 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
     return () => { document.body.style.overflow = original; };
   }, []);
 
-  // Escape key to close
+  // Escape / focus trap / restore focus
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const modal = scrollRef.current;
+    const focusableSelector = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+    const getFocusable = () =>
+      modal ? Array.from(modal.querySelectorAll<HTMLElement>(focusableSelector)) : [];
+
+    getFocusable()[0]?.focus();
+
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab' || !modal) {
+        return;
+      }
+      const focusable = getFocusable();
+      if (focusable.length === 0) {
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
     document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    return () => {
+      document.removeEventListener('keydown', handler);
+      previouslyFocused?.focus();
+    };
   }, [onClose]);
 
   // Swipe down to close (mobile)
@@ -107,7 +144,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 animate-[fadeIn_0.2s_ease-out]"
@@ -128,8 +165,10 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
         <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
           <h2 className="text-lg font-bold text-gray-900">薬局詳細</h2>
           <button
+            type="button"
             onClick={onClose}
             className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="閉じる"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -141,12 +180,19 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
         <div className="p-4">
           {/* 薬局名と距離 */}
           <div className="flex items-start justify-between gap-2">
-            <h3 className="text-xl font-bold text-gray-900">{pharmacy.name}</h3>
-            {pharmacy.distance !== undefined && (
-              <span className="flex-shrink-0 px-3 py-1 bg-[#EBF6FC] text-[#4AA8D9] font-medium rounded-full">
-                {formatDistance(pharmacy.distance)}
-              </span>
-            )}
+            <h3 id={titleId} className="text-xl font-bold text-gray-900">{pharmacy.name}</h3>
+            <div className="flex flex-col items-end gap-1 flex-shrink-0">
+              {likelyOpen && (
+                <span className="px-3 py-1 bg-[#EBF6FC] text-[#4AA8D9] text-sm font-medium rounded-full">
+                  開局中の目安
+                </span>
+              )}
+              {pharmacy.distance !== undefined && (
+                <span className="px-3 py-1 bg-[#EBF6FC] text-[#4AA8D9] font-medium rounded-full">
+                  {formatDistance(pharmacy.distance)}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* 基本情報 */}
@@ -180,7 +226,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
                 }
                 label="電話番号"
                 value={
-                  <a href={`tel:${pharmacy.phone}`} className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline">
+                  <a href={toTelHref(pharmacy.phone)} className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline">
                     {pharmacy.phone}
                   </a>
                 }
@@ -248,7 +294,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
                     {pharmacy.afterHoursPhone && (
                       <div className="mt-1">
                         <span className="text-sm text-gray-500">時間外電話: </span>
-                        <a href={`tel:${pharmacy.afterHoursPhone}`} className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline">
+                        <a href={toTelHref(pharmacy.afterHoursPhone)} className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline">
                           {pharmacy.afterHoursPhone}
                         </a>
                       </div>
@@ -376,6 +422,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
 
           {/* 共有ボタン */}
           <button
+            type="button"
             onClick={handleShare}
             className="mt-3 flex items-center justify-center gap-2 w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
           >
@@ -387,7 +434,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
 
           {pharmacy.phone && (
             <a
-              href={`tel:${pharmacy.phone}`}
+              href={toTelHref(pharmacy.phone)}
               className="mt-3 flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#65BBE9] text-white rounded-lg hover:bg-[#4AA8D9] transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

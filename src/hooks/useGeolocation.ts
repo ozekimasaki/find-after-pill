@@ -9,6 +9,31 @@ interface UseGeolocationReturn {
   clearLocation: () => void;
 }
 
+const HIGH_ACCURACY_OPTIONS: PositionOptions = {
+  enableHighAccuracy: true,
+  timeout: 8000,
+  maximumAge: 60000,
+};
+
+const LOW_ACCURACY_OPTIONS: PositionOptions = {
+  enableHighAccuracy: false,
+  timeout: 10000,
+  maximumAge: 300000,
+};
+
+function toErrorMessage(err: GeolocationPositionError): string {
+  switch (err.code) {
+    case err.PERMISSION_DENIED:
+      return '位置情報の使用が許可されていません。ブラウザの設定を許可するか、都道府県から探してください';
+    case err.POSITION_UNAVAILABLE:
+      return '位置情報を取得できませんでした。都道府県から探すこともできます';
+    case err.TIMEOUT:
+      return '位置情報の取得がタイムアウトしました。都道府県から探すこともできます';
+    default:
+      return '位置情報の取得に失敗しました。都道府県から探すこともできます';
+  }
+}
+
 /**
  * 現在地を取得するカスタムフック
  */
@@ -19,43 +44,42 @@ export function useGeolocation(): UseGeolocationReturn {
 
   const getCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      setError('お使いのブラウザは位置情報に対応していません');
+      setError('お使いのブラウザは位置情報に対応していません。都道府県から探してください');
       return;
     }
 
     setLoading(true);
     setError(null);
 
+    const onSuccess = (position: GeolocationPosition) => {
+      setLocation({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+      });
+      setLoading(false);
+    };
+
+    const onLowAccuracyFailure = (err: GeolocationPositionError) => {
+      setError(toErrorMessage(err));
+      setLoading(false);
+    };
+
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-        });
-        setLoading(false);
-      },
+      onSuccess,
       (err) => {
-        let errorMessage = '位置情報の取得に失敗しました';
-        switch (err.code) {
-          case err.PERMISSION_DENIED:
-            errorMessage = '位置情報の使用が許可されていません';
-            break;
-          case err.POSITION_UNAVAILABLE:
-            errorMessage = '位置情報を取得できませんでした';
-            break;
-          case err.TIMEOUT:
-            errorMessage = '位置情報の取得がタイムアウトしました';
-            break;
+        if (err.code === err.PERMISSION_DENIED) {
+          setError(toErrorMessage(err));
+          setLoading(false);
+          return;
         }
-        setError(errorMessage);
-        setLoading(false);
+        navigator.geolocation.getCurrentPosition(
+          onSuccess,
+          onLowAccuracyFailure,
+          LOW_ACCURACY_OPTIONS
+        );
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000, // 1分間キャッシュ
-      }
+      HIGH_ACCURACY_OPTIONS
     );
   }, []);
 

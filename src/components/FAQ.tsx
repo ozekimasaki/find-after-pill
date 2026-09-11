@@ -62,9 +62,12 @@ export function FAQ() {
         {faqItems.map((item, index) => (
           <div key={index}>
             <button
+              type="button"
               onClick={() => toggle(index)}
               className="w-full flex items-center justify-between py-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#65BBE9] rounded"
               aria-expanded={openIndex === index}
+              aria-controls={`faq-answer-${index}`}
+              id={`faq-question-${index}`}
             >
               <span className="font-medium text-gray-800 pr-4">
                 {item.question}
@@ -76,6 +79,7 @@ export function FAQ() {
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -86,8 +90,11 @@ export function FAQ() {
               </svg>
             </button>
             <div
+              id={`faq-answer-${index}`}
+              role="region"
+              aria-labelledby={`faq-question-${index}`}
               className={`overflow-hidden transition-all duration-300 ease-out ${
-                openIndex === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                openIndex === index ? 'max-h-[40rem] opacity-100' : 'max-h-0 opacity-0'
               }`}
             >
               <p className="pb-4 text-gray-600 text-sm leading-relaxed">

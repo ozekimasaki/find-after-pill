@@ -25,12 +25,15 @@ const API_BASE = '/api';
 /**
  * 薬局データを取得・管理するカスタムフック
  */
-export function usePharmacies(userLocation?: GeoLocation | null): UsePharmaciesReturn {
+export function usePharmacies(
+  userLocation?: GeoLocation | null,
+  initialParams: SearchParams = {}
+): UsePharmaciesReturn {
   const [allPharmacies, setAllPharmacies] = useState<Pharmacy[]>([]);
   const [meta, setMeta] = useState<PharmacyMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchParams, setSearchParamsState] = useState<SearchParams>({});
+  const [searchParams, setSearchParamsState] = useState<SearchParams>(initialParams);
 
   // データ取得
   const fetchPharmacies = useCallback(async () => {
@@ -49,7 +52,7 @@ export function usePharmacies(userLocation?: GeoLocation | null): UsePharmaciesR
       setMeta(data.meta || null);
     } catch (err) {
       console.error('Failed to fetch pharmacies:', err);
-      setError('薬局データの取得に失敗しました');
+      setError('薬局データの取得に失敗しました。通信状況を確認して再度お試しください');
     } finally {
       setLoading(false);
     }
