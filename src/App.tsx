@@ -43,7 +43,6 @@ function App() {
   );
 
   const resultAreaRef = useRef<HTMLDivElement>(null);
-  const prevLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   const initialParamsRef = useRef(urlInit.searchParams);
   const userFilterRef = useRef(false);
 
@@ -180,21 +179,6 @@ function App() {
       persistHoursOff: hoursTouched && !searchParams.afterHoursOnly,
     });
   }, [searchParams, viewMode, userLocation, hoursTouched]);
-
-  useEffect(() => {
-    if (prevLocationRef.current === null && userLocation !== null) {
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      const timer = window.setTimeout(() => {
-        resultAreaRef.current?.scrollIntoView({
-          behavior: reduceMotion ? 'auto' : 'smooth',
-          block: 'start',
-        });
-      }, 300);
-      prevLocationRef.current = userLocation;
-      return () => window.clearTimeout(timer);
-    }
-    prevLocationRef.current = userLocation;
-  }, [userLocation]);
 
   useEffect(() => {
     const handleScroll = () => {
