@@ -64,18 +64,6 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
         {pharmacy.address}
       </a>
 
-      {pharmacy.phone && (
-        <p className="mt-1 text-gray-600 text-sm">
-          <a
-            href={toTelHref(pharmacy.phone)}
-            onClick={(e) => e.stopPropagation()}
-            className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline"
-          >
-            {formatPhoneDisplay(pharmacy.phone)}
-          </a>
-        </p>
-      )}
-
       {/* 追加情報バッジ */}
       <div className="mt-2 flex flex-wrap gap-1.5">
         {pharmacy.businessHours && (
@@ -151,12 +139,15 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
         <a
           href={toTelHref(pharmacy.phone)}
           onClick={(e) => e.stopPropagation()}
-          className="mt-2 flex items-center justify-center gap-2 w-full px-4 py-3 text-base font-medium text-white bg-[#65BBE9] rounded-lg hover:bg-[#4AA8D9] transition-colors"
+          className="mt-2 flex flex-col items-center justify-center gap-0.5 w-full px-4 py-3 text-white bg-[#65BBE9] rounded-lg hover:bg-[#4AA8D9] transition-colors"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-          </svg>
-          電話で問い合わせる
+          <span className="inline-flex items-center gap-2 text-base font-medium">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </svg>
+            電話する
+          </span>
+          <span className="text-sm font-normal tracking-wide">{formatPhoneDisplay(pharmacy.phone)}</span>
         </a>
       )}
     </article>

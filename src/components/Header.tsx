@@ -2,9 +2,10 @@ import type { PharmacyMeta } from '../types/pharmacy';
 
 interface HeaderProps {
   meta: PharmacyMeta | null;
+  loadedCount?: number;
 }
 
-export function Header({ meta }: HeaderProps) {
+export function Header({ meta, loadedCount }: HeaderProps) {
   const formatDate = (isoString: string) => {
     const date = new Date(isoString);
     return date.toLocaleDateString('ja-JP', {
@@ -40,10 +41,12 @@ export function Header({ meta }: HeaderProps) {
             よくある質問
           </a>
         </nav>
-        {meta && (
+        {(meta || (loadedCount !== undefined && loadedCount > 0)) && (
           <div className="mt-1 sm:mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs sm:text-sm text-white/90">
-            <span>登録薬局数: {meta.totalCount.toLocaleString()}件</span>
-            <span>最終更新: {formatDate(meta.lastUpdated)}</span>
+            <span>
+              検索できる薬局: {(loadedCount ?? meta?.totalCount ?? 0).toLocaleString()}件
+            </span>
+            {meta && <span>最終更新: {formatDate(meta.lastUpdated)}</span>}
           </div>
         )}
       </div>

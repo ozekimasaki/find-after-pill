@@ -61,6 +61,7 @@ function App() {
     refetch,
     prefectureCounts,
     locationSearch,
+    loadedCount,
   } = usePharmacies(userLocation, initialParamsRef.current);
 
   const debouncedQuery = useDebounce(queryInput, 300);
@@ -85,7 +86,8 @@ function App() {
     searchParams.afterHoursOnly ||
     searchParams.noAdvanceCallRequired ||
     searchParams.femalePharmacistOnly ||
-    searchParams.hasPrivateSpace
+    searchParams.hasPrivateSpace ||
+    searchParams.openNowOnly
   );
 
   const handlePrefectureChange = useCallback((prefecture: string) => {
@@ -117,6 +119,7 @@ function App() {
       noAdvanceCallRequired: false,
       femalePharmacistOnly: false,
       hasPrivateSpace: false,
+      openNowOnly: false,
     });
     setWasAutoEnabled(false);
     setHoursTouched(true);
@@ -205,7 +208,7 @@ function App() {
       >
         検索結果へスキップ
       </a>
-      <Header meta={meta} />
+      <Header meta={meta} loadedCount={loadedCount} />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
         <SupportBanner />
@@ -228,13 +231,13 @@ function App() {
             )}
           </div>
 
-          <div className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 py-2 mb-4 border-b border-gray-100">
-            <div className="bg-white rounded-xl shadow-sm p-3">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="md:col-span-2">
+          <div className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 py-1.5 mb-3 border-b border-gray-100">
+            <div className="bg-white rounded-xl shadow-sm p-2.5 md:p-3">
+              <div className="flex gap-2 md:grid md:grid-cols-3 md:gap-3">
+                <div className="min-w-0 flex-1 md:col-span-2">
                   <SearchBar value={queryInput} onChange={setQueryInput} />
                 </div>
-                <div>
+                <div className="w-[8.5rem] shrink-0 md:w-auto">
                   <PrefectureFilter
                     value={searchParams.prefecture || ''}
                     onChange={handlePrefectureChange}
@@ -242,16 +245,16 @@ function App() {
                   />
                 </div>
               </div>
-              <div className="mt-3">
+              <div className="mt-2 md:mt-3">
                 <FilterPanel
                   searchParams={searchParams}
                   setSearchParams={handleFilterChange}
                 />
               </div>
               {userLocation && (
-                <div className="mt-3">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-sm font-medium text-gray-700">距離で絞り込み</span>
+                <div className="mt-2 md:mt-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-medium text-gray-700">距離</span>
                     {inferredPrefecture && (
                       <span className="text-xs text-gray-400">
                         現在地は{inferredPrefecture}付近
@@ -265,7 +268,7 @@ function App() {
                         type="button"
                         onClick={() => handleRadiusChange(r)}
                         aria-pressed={searchParams.radius === r}
-                        className={`flex-1 py-1.5 text-sm font-medium rounded transition-colors ${
+                        className={`flex-1 py-1 text-xs md:text-sm font-medium rounded transition-colors ${
                           searchParams.radius === r
                             ? 'bg-[#65BBE9] text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -284,7 +287,7 @@ function App() {
         <div
           id="results"
           ref={resultAreaRef}
-          className="text-sm text-gray-600 mb-4 px-1 transition-opacity duration-200 scroll-mt-36"
+          className="text-sm text-gray-600 mb-4 px-1 transition-opacity duration-200 scroll-mt-28 md:scroll-mt-36"
           aria-live="polite"
         >
           {loading ? (

@@ -44,6 +44,9 @@ export function parseUrlSearchState(search = window.location.search): UrlSearchS
   if (parseFlag(params.get('room'))) {
     searchParams.hasPrivateSpace = true;
   }
+  if (parseFlag(params.get('open'))) {
+    searchParams.openNowOnly = true;
+  }
 
   const radiusRaw = Number(params.get('radius'));
   const radius = (RADIUS_OPTIONS as readonly number[]).includes(radiusRaw)
@@ -86,6 +89,9 @@ export function replaceUrlSearchState(state: {
   }
   if (searchParams.hasPrivateSpace) {
     params.set('room', '1');
+  }
+  if (searchParams.openNowOnly) {
+    params.set('open', '1');
   }
   if (hasLocation && searchParams.radius && searchParams.radius !== DEFAULT_RADIUS) {
     params.set('radius', String(searchParams.radius));

@@ -10,6 +10,7 @@ import { calculateDistance } from '../utils/distance';
 import { inferPrefecture } from '../utils/prefectureFromLocation';
 import { isLikelyInJapan } from '../utils/japanBounds';
 import { isLikelyOpenNow, supportsAfterHoursFilter } from '../utils/pharmacyAvailability';
+import { pharmacyMatchesQuery } from '../utils/searchText';
 
 export type LocationFallback = 'none' | 'ungeocoded' | 'prefecture';
 
@@ -29,6 +30,7 @@ interface UsePharmaciesReturn {
   refetch: () => void;
   prefectureCounts: Record<string, number>;
   locationSearch: LocationSearchInfo;
+  loadedCount: number;
 }
 
 const API_BASE = '/api';
@@ -88,13 +90,9 @@ export function usePharmacies(
       filtered = filtered.filter(p => p.prefecture === searchParams.prefecture);
     }
 
-    // フリーワード検索
+    // フリーワード検索（ひらがな/カタカナ・電話番号も対象）
     if (searchParams.query) {
-      const query = searchParams.query.toLowerCase();
-      filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(query) ||
-        p.address.toLowerCase().includes(query)
-      );
+      filtered = filtered.filter((p) => pharmacyMatchesQuery(p, searchParams.query!));
     }
 
     // 追加フィルター
@@ -115,6 +113,9 @@ export function usePharmacies(
       filtered = filtered.filter(p =>
         p.privacyMeasures && p.privacyMeasures.includes('個室')
       );
+    }
+    if (searchParams.openNowOnly) {
+      filtered = filtered.filter((p) => isLikelyOpenNow(p.businessHours));
     }
 
     const inferredPrefecture = userLocation
@@ -172,6 +173,15 @@ export function usePharmacies(
       result.filter(p => isLikelyOpenNow(p.businessHours)).map(p => p.id)
     );
 
+    const compareOpenThenName = (a: PharmacyWithDistance, b: PharmacyWithDistance) => {
+      const aOpen = openIds.has(a.id);
+      const bOpen = openIds.has(b.id);
+      if (aOpen !== bOpen) {
+        return aOpen ? -1 : 1;
+      }
+      return a.name.localeCompare(b.name, 'ja');
+    };
+
     if (userLocation) {
       result.sort((a, b) => {
         const aHas = a.distance !== undefined;
@@ -184,21 +194,12 @@ export function usePharmacies(
         } else if (aHas !== bHas) {
           return aHas ? -1 : 1;
         }
-
-        const aOpen = openIds.has(a.id);
-        const bOpen = openIds.has(b.id);
-        if (aOpen !== bOpen) {
-          return aOpen ? -1 : 1;
-        }
-        return a.name.localeCompare(b.name, 'ja');
+        return compareOpenThenName(a, b);
       });
+    } else if (searchParams.prefecture) {
+      result.sort(compareOpenThenName);
     } else {
       result.sort((a, b) => {
-        const aOpen = openIds.has(a.id);
-        const bOpen = openIds.has(b.id);
-        if (aOpen !== bOpen) {
-          return aOpen ? -1 : 1;
-        }
         const prefCompare = a.prefecture.localeCompare(b.prefecture, 'ja');
         if (prefCompare !== 0) {
           return prefCompare;
@@ -236,5 +237,6 @@ export function usePharmacies(
     refetch: fetchPharmacies,
     prefectureCounts,
     locationSearch,
+    loadedCount: allPharmacies.length,
   };
 }

@@ -84,6 +84,8 @@ export interface SearchParams {
   femalePharmacistOnly?: boolean;
   /** プライバシー配慮ありのみ */
   hasPrivateSpace?: boolean;
+  /** いま開局中の目安のみ */
+  openNowOnly?: boolean;
 }
 
 /**

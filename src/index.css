@@ -91,3 +91,12 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #a1a1a1;
 }
+
+.filter-chip-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.filter-chip-scroll::-webkit-scrollbar {
+  display: none;
+}

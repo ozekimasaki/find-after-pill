@@ -16,7 +16,7 @@ export function PrefectureFilter({ value, onChange, counts = {} }: PrefectureFil
         id="prefecture-select"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none pl-4 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#65BBE9] focus:border-transparent outline-none bg-white cursor-pointer"
+        className="w-full appearance-none pl-3 pr-8 md:pl-4 md:pr-10 py-2.5 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#65BBE9] focus:border-transparent outline-none bg-white cursor-pointer truncate"
         aria-label="都道府県"
       >
         <option value="">全国</option>
