@@ -20,7 +20,7 @@ interface PharmacyListProps {
   onResetFilters?: () => void;
   onRetry?: () => void;
   onSelectPharmacy: (pharmacy: PharmacyWithDistance) => void;
-  hasUserLocation?: boolean;
+  showUnmeasuredDistance?: boolean;
   emptyActions?: PharmacyListEmptyActions;
 }
 
@@ -54,7 +54,7 @@ export function PharmacyList({
   onResetFilters,
   onRetry,
   onSelectPharmacy,
-  hasUserLocation = false,
+  showUnmeasuredDistance = false,
   emptyActions,
 }: PharmacyListProps) {
   const resultKey = `${pharmacies.length}:${pharmacies[0]?.id ?? ''}:${pharmacies[pharmacies.length - 1]?.id ?? ''}`;
@@ -168,7 +168,7 @@ export function PharmacyList({
             <PharmacyCard
               pharmacy={pharmacy}
               onClick={() => onSelectPharmacy(pharmacy)}
-              hasUserLocation={hasUserLocation}
+              hasUserLocation={showUnmeasuredDistance}
             />
           </div>
         ))}

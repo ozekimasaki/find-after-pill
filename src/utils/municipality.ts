@@ -18,22 +18,25 @@ export function extractMunicipality(address: string, prefecture: string): string
     return designated[1];
   }
 
-  const city = stripped.match(/^([^\s\d]{1,12}市)/);
-  if (city) {
-    return city[1];
+  const hasLeadingGun = /^[^\s\d]{1,8}郡/.test(stripped);
+  if (!hasLeadingGun) {
+    const city = stripped.match(/^([^\s\d]{1,12}市)/);
+    if (city) {
+      return city[1];
+    }
+
+    const ward = stripped.match(/^([^\s\d]{1,12}区)/);
+    if (ward) {
+      return ward[1];
+    }
   }
 
-  const ward = stripped.match(/^([^\s\d]{1,12}区)/);
-  if (ward) {
-    return ward[1];
-  }
-
-  const town = stripped.match(/^([^\s\d]{1,12}町)/);
+  const town = stripped.match(/^((?:[^\s\d]{1,8}郡)?[^\s\d]{1,8}町)/);
   if (town) {
     return town[1];
   }
 
-  const village = stripped.match(/^([^\s\d]{1,12}村)/);
+  const village = stripped.match(/^((?:[^\s\d]{1,8}郡)?[^\s\d]{1,8}村)/);
   if (village) {
     return village[1];
   }

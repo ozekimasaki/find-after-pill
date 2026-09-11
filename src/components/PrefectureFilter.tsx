@@ -16,7 +16,7 @@ export function PrefectureFilter({ value, onChange, counts = {} }: PrefectureFil
         id="prefecture-select"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none pl-3 pr-8 md:pl-4 md:pr-10 py-2.5 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#65BBE9] focus:border-transparent outline-none bg-white cursor-pointer truncate"
+        className="w-full appearance-none pl-2.5 pr-7 md:pl-4 md:pr-10 py-2 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#65BBE9] focus:border-transparent outline-none bg-white cursor-pointer truncate"
         aria-label="都道府県"
       >
         <option value="">全国</option>
@@ -27,7 +27,7 @@ export function PrefectureFilter({ value, onChange, counts = {} }: PrefectureFil
         ))}
       </select>
       <svg
-        className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
+        className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400 pointer-events-none"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"

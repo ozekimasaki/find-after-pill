@@ -269,12 +269,14 @@ function App() {
       </a>
       <Header meta={meta} loadedCount={loadedCount} />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-4 sm:py-6">
         <SupportBanner />
 
-        <p className="text-sm text-gray-500 mb-3 px-1">
-          処方箋なしで購入できます。まずはお近くの薬局を見つけましょう。
-        </p>
+        {!userLocation && (
+          <p className="text-sm text-gray-500 mb-3 px-1">
+            処方箋なしで購入できます。まずはお近くの薬局を見つけましょう。
+          </p>
+        )}
 
         <h2 className="sr-only">薬局を検索</h2>
         {(!userLocation || locationLoading || locationError) && (
@@ -398,7 +400,7 @@ function App() {
         <div
           id="results"
           ref={resultAreaRef}
-          className="text-sm text-gray-600 mb-4 px-1 transition-opacity duration-200 scroll-mt-24 md:scroll-mt-40"
+          className="text-sm text-gray-600 mb-2 px-1 transition-opacity duration-200 scroll-mt-24 md:scroll-mt-40"
           aria-live="polite"
         >
           {loading ? (
@@ -451,12 +453,6 @@ function App() {
           </p>
         )}
 
-        {userLocation && locationSearch.fallback === 'prefecture' && locationSearch.prefecture && (
-          <div className="mb-3 px-3 py-2 text-sm bg-[#EBF6FC] text-gray-700 rounded-lg">
-            近くの地図ピンは見つかりませんでした。{locationSearch.prefecture}の薬局を、距離が分かる順に表示しています。
-          </div>
-        )}
-
         {userLocation && locationSearch.fallback === 'ungeocoded' && locationSearch.prefecture && (
           <p className="text-xs text-gray-500 px-1 mb-2">
             距離が分かる薬局のあとに、{locationSearch.prefecture}の地図未登録の薬局を続けて表示しています。
@@ -488,7 +484,7 @@ function App() {
         )}
 
         <h2 className="sr-only">検索結果</h2>
-        <nav aria-label="表示切替" className="flex gap-2 mb-4" role="tablist">
+        <nav aria-label="表示切替" className="flex gap-2 mb-3" role="tablist">
           <button
             type="button"
             role="tab"
@@ -535,7 +531,9 @@ function App() {
             onResetFilters={handleResetFilters}
             onRetry={refetch}
             onSelectPharmacy={setSelectedPharmacy}
-            hasUserLocation={!!userLocation}
+            showUnmeasuredDistance={
+              !!userLocation && pharmacies.some((pharmacy) => pharmacy.distance !== undefined)
+            }
             emptyActions={{
               nextRadius: userLocation ? nextRadius : undefined,
               onExpandRadius: nextRadius ? () => handleRadiusChange(nextRadius) : undefined,

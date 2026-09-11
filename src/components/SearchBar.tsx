@@ -7,7 +7,7 @@ interface SearchBarProps {
 export function SearchBar({
   value,
   onChange,
-  placeholder = '薬局名・住所・電話',
+  placeholder = '店名・住所・電話',
 }: SearchBarProps) {
   return (
     <div className="relative">
@@ -22,10 +22,10 @@ export function SearchBar({
         placeholder={placeholder}
         autoComplete="off"
         enterKeyHint="search"
-        className="w-full pl-10 pr-10 py-2.5 md:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#65BBE9] focus:border-transparent outline-none transition-all [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
+        className="w-full pl-9 pr-9 py-2 md:pl-10 md:pr-10 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#65BBE9] focus:border-transparent outline-none transition-all [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
       />
       <svg
-        className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
+        className="absolute left-2.5 md:left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400 pointer-events-none"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -42,7 +42,7 @@ export function SearchBar({
         <button
           type="button"
           onClick={() => onChange('')}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          className="absolute right-2.5 md:right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
           aria-label="検索キーワードをクリア"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

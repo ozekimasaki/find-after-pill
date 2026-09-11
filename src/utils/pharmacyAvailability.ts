@@ -324,7 +324,11 @@ export function formatTodayHours(businessHours?: string | null, now: Date = new 
     ranges.push(`${formatClock(startHour, match[2])}-${formatClock(endHour, match[4])}`);
   }
 
-  const unique = [...new Set(ranges)];
+  const unique = [...new Set(ranges)].sort((a, b) => {
+    const startHour = (value: string) => Number(value.split('-')[0]?.split(':')[0] ?? '0');
+    const score = (hour: number) => (hour < 5 ? hour + 24 : hour);
+    return score(startHour(a)) - score(startHour(b));
+  });
   if (unique.length > 0) {
     const shown = unique.slice(0, 2).join(' / ');
     return unique.length > 2 ? `${shown} 他` : shown;
