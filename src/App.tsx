@@ -175,13 +175,15 @@ function App() {
   }, [setSearchParams, wasAutoEnabled]);
 
   const handleMunicipalitySelect = useCallback((city: string) => {
-    setQueryInput((current) => (current === city ? '' : city));
+    const next = queryInput === city ? '' : city;
+    setQueryInput(next);
+    setSearchParams({ query: next || undefined });
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     resultAreaRef.current?.scrollIntoView({
       behavior: reduceMotion ? 'auto' : 'smooth',
       block: 'start',
     });
-  }, []);
+  }, [queryInput, setSearchParams]);
 
   const handleShowInferredPrefecture = useCallback(() => {
     if (!inferredPrefecture) {
