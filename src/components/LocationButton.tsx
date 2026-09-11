@@ -12,9 +12,9 @@ export function LocationButton({ onClick, loading, hasLocation, onClear }: Locat
         <button
           type="button"
           onClick={onClick}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#65BBE9] text-white rounded-lg hover:bg-[#4AA8D9] transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-[#65BBE9] text-white rounded-lg hover:bg-[#4AA8D9] transition-colors text-sm"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
@@ -23,7 +23,7 @@ export function LocationButton({ onClick, loading, hasLocation, onClear }: Locat
         <button
           type="button"
           onClick={onClear}
-          className="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          className="px-3 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
           title="位置情報をクリア"
           aria-label="位置情報をクリア"
         >
@@ -41,7 +41,7 @@ export function LocationButton({ onClick, loading, hasLocation, onClear }: Locat
         type="button"
         onClick={onClick}
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-[#65BBE9] text-white rounded-lg hover:bg-[#4AA8D9] transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-base"
+        className="w-full flex items-center justify-center gap-2 px-4 py-3.5 bg-[#65BBE9] text-white rounded-lg hover:bg-[#4AA8D9] transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-base"
       >
         {loading ? (
           <>

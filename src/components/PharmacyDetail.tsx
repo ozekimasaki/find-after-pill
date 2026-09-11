@@ -144,7 +144,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+    <div className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 animate-[fadeIn_0.2s_ease-out]"
@@ -154,7 +154,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
       {/* Modal */}
       <div
         ref={scrollRef}
-        className="relative w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[92dvh] overflow-auto animate-slideUp sm:animate-fadeInScale pb-[env(safe-area-inset-bottom)] isolate"
+        className="relative w-full h-[100dvh] sm:h-auto sm:max-w-lg bg-white sm:rounded-2xl shadow-xl sm:max-h-[92dvh] overflow-auto animate-slideUp sm:animate-fadeInScale pb-[env(safe-area-inset-bottom)] isolate"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >

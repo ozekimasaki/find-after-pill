@@ -10,6 +10,7 @@ import { PharmacyList } from './components/PharmacyList';
 import { Map } from './components/Map';
 import { FAQ } from './components/FAQ';
 import { PharmacyDetail } from './components/PharmacyDetail';
+import { MunicipalityChips } from './components/MunicipalityChips';
 import { useGeolocation } from './hooks/useGeolocation';
 import { usePharmacies } from './hooks/usePharmacies';
 import { useDebounce } from './hooks/useDebounce';
@@ -33,6 +34,8 @@ function App() {
   const [radius, setRadius] = useState(urlInit.radius);
   const [queryInput, setQueryInput] = useState(urlInit.searchParams.query ?? '');
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [filtersPinned, setFiltersPinned] = useState(false);
   const [selectedPharmacy, setSelectedPharmacy] = useState<PharmacyWithDistance | null>(null);
   const [hoursTouched, setHoursTouched] = useState(urlInit.hasExplicitHours);
   const [wasAutoEnabled, setWasAutoEnabled] = useState(
@@ -42,6 +45,7 @@ function App() {
   const resultAreaRef = useRef<HTMLDivElement>(null);
   const prevLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   const initialParamsRef = useRef(urlInit.searchParams);
+  const userFilterRef = useRef(false);
 
   const {
     location: userLocation,
@@ -62,6 +66,7 @@ function App() {
     prefectureCounts,
     locationSearch,
     loadedCount,
+    municipalityCounts,
   } = usePharmacies(userLocation, initialParamsRef.current);
 
   const debouncedQuery = useDebounce(queryInput, 300);
@@ -79,6 +84,14 @@ function App() {
     [userLocation]
   );
 
+  const extraFilterCount = [
+    searchParams.openNowOnly,
+    searchParams.afterHoursOnly,
+    searchParams.noAdvanceCallRequired,
+    searchParams.femalePharmacistOnly,
+    searchParams.hasPrivateSpace,
+  ].filter(Boolean).length;
+  const extrasOpen = !scrolled || filtersPinned;
   const nextRadius = RADIUS_OPTIONS.find((option) => option > radius);
   const hasActiveFilters = Boolean(
     searchParams.query ||
@@ -91,10 +104,12 @@ function App() {
   );
 
   const handlePrefectureChange = useCallback((prefecture: string) => {
+    userFilterRef.current = true;
     setSearchParams({ prefecture: prefecture || undefined });
   }, [setSearchParams]);
 
   const handleRadiusChange = useCallback((r: number) => {
+    userFilterRef.current = true;
     setRadius(r);
     setSearchParams({ radius: r });
   }, [setSearchParams]);
@@ -126,6 +141,7 @@ function App() {
   }, [setSearchParams]);
 
   const handleFilterChange: typeof setSearchParams = useCallback((params) => {
+    userFilterRef.current = true;
     if ('afterHoursOnly' in params) {
       setHoursTouched(true);
       if (!params.afterHoursOnly && wasAutoEnabled) {
@@ -134,6 +150,10 @@ function App() {
     }
     setSearchParams(params);
   }, [setSearchParams, wasAutoEnabled]);
+
+  const handleMunicipalitySelect = useCallback((city: string) => {
+    setQueryInput((current) => (current === city ? '' : city));
+  }, []);
 
   const handleShowInferredPrefecture = useCallback(() => {
     if (!inferredPrefecture) {
@@ -178,11 +198,36 @@ function App() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setShowBackToTop(window.scrollY > 400);
+      const y = window.scrollY;
+      setShowBackToTop(y > 400);
+      setScrolled(y > 80);
+      if (y <= 80) {
+        setFiltersPinned(false);
+      }
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (!userFilterRef.current) {
+      return;
+    }
+    userFilterRef.current = false;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    resultAreaRef.current?.scrollIntoView({
+      behavior: reduceMotion ? 'auto' : 'smooth',
+      block: 'start',
+    });
+  }, [
+    searchParams.prefecture,
+    searchParams.afterHoursOnly,
+    searchParams.noAdvanceCallRequired,
+    searchParams.femalePharmacistOnly,
+    searchParams.hasPrivateSpace,
+    searchParams.openNowOnly,
+    searchParams.radius,
+  ]);
 
   useEffect(() => {
     if (!selectedPharmacy) {
@@ -218,23 +263,58 @@ function App() {
         </p>
 
         <h2 className="sr-only">薬局を検索</h2>
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-3">
-          <LocationButton
-            onClick={handleGetCurrentLocation}
-            loading={locationLoading}
-            hasLocation={!!userLocation}
-            onClear={handleClearLocation}
-          />
-          {locationError && (
-            <p className="mt-2 text-sm text-red-600">{locationError}</p>
-          )}
-        </div>
+        {(!userLocation || locationLoading || locationError) && (
+          <div className="bg-white rounded-xl shadow-sm p-4 mb-3">
+            <LocationButton
+              onClick={handleGetCurrentLocation}
+              loading={locationLoading}
+              hasLocation={!!userLocation}
+              onClear={handleClearLocation}
+            />
+            {locationError && (
+              <p className="mt-2 text-sm text-red-600">{locationError}</p>
+            )}
+          </div>
+        )}
 
         <div
           role="search"
           className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 py-1.5 mb-3 border-b border-gray-100"
         >
             <div className="bg-white rounded-xl shadow-sm p-2.5 md:p-3">
+              {userLocation && (
+                <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
+                  <span>
+                    現在地で検索中
+                    {inferredPrefecture ? `（${inferredPrefecture}）` : ''}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleClearLocation}
+                    className="text-[#4AA8D9] hover:underline"
+                  >
+                    解除
+                  </button>
+                  {!extrasOpen && (
+                    <div className="ml-auto flex gap-1 md:hidden">
+                      <button
+                        type="button"
+                        onClick={() => setFiltersPinned(true)}
+                        className="px-2 py-0.5 rounded bg-gray-100 text-gray-700"
+                      >
+                        {searchParams.radius ?? radius}km
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFiltersPinned(true)}
+                        className="px-2 py-0.5 rounded bg-gray-100 text-gray-700"
+                      >
+                        絞り込み{extraFilterCount > 0 ? ` ${extraFilterCount}` : ''}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="flex gap-2 md:grid md:grid-cols-3 md:gap-3">
                 <div className="min-w-0 flex-1 md:col-span-2">
                   <SearchBar value={queryInput} onChange={setQueryInput} />
@@ -247,6 +327,18 @@ function App() {
                   />
                 </div>
               </div>
+              {!userLocation && !extrasOpen && (
+                <div className="mt-2 md:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setFiltersPinned(true)}
+                    className="text-sm text-[#4AA8D9]"
+                  >
+                    絞り込みを表示{extraFilterCount > 0 ? `（${extraFilterCount}）` : ''}
+                  </button>
+                </div>
+              )}
+              <div className={extrasOpen ? 'block' : 'hidden md:block'}>
               <div className="mt-2 md:mt-3">
                 <FilterPanel
                   searchParams={searchParams}
@@ -282,6 +374,7 @@ function App() {
                   </div>
                 </div>
               )}
+              </div>
             </div>
         </div>
 
@@ -364,6 +457,14 @@ function App() {
                 : ''}
             </button>
           </div>
+        )}
+
+        {(searchParams.prefecture || userLocation) && (
+          <MunicipalityChips
+            counts={municipalityCounts}
+            selected={queryInput}
+            onSelect={handleMunicipalitySelect}
+          />
         )}
 
         <h2 className="sr-only">検索結果</h2>

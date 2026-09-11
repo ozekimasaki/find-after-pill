@@ -12,6 +12,7 @@ import { inferPrefecture } from '../utils/prefectureFromLocation';
 import { isLikelyInJapan } from '../utils/japanBounds';
 import { isLikelyOpenNow, supportsAfterHoursFilter } from '../utils/pharmacyAvailability';
 import { pharmacyMatchesQuery } from '../utils/searchText';
+import { extractMunicipality } from '../utils/municipality';
 
 export type LocationFallback = 'none' | 'ungeocoded' | 'prefecture';
 
@@ -32,6 +33,7 @@ interface UsePharmaciesReturn {
   prefectureCounts: Record<string, number>;
   locationSearch: LocationSearchInfo;
   loadedCount: number;
+  municipalityCounts: Record<string, number>;
 }
 
 const API_BASE = '/api';
@@ -233,6 +235,25 @@ export function usePharmacies(
     return counts;
   }, [allPharmacies]);
 
+  const municipalityCounts = useMemo(() => {
+    const targetPref = searchParams.prefecture
+      || (userLocation ? inferPrefecture(userLocation.lat, userLocation.lng) : null);
+    if (!targetPref) {
+      return {};
+    }
+    const counts: Record<string, number> = {};
+    for (const pharmacy of allPharmacies) {
+      if (pharmacy.prefecture !== targetPref) {
+        continue;
+      }
+      const city = extractMunicipality(pharmacy.address, pharmacy.prefecture);
+      if (city) {
+        counts[city] = (counts[city] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [allPharmacies, searchParams.prefecture, userLocation]);
+
   return {
     pharmacies,
     meta,
@@ -244,5 +265,6 @@ export function usePharmacies(
     prefectureCounts,
     locationSearch,
     loadedCount: allPharmacies.length,
+    municipalityCounts,
   };
 }
