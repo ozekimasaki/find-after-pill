@@ -60,6 +60,7 @@ function App() {
     setSearchParams,
     refetch,
     prefectureCounts,
+    locationSearch,
   } = usePharmacies(userLocation, initialParamsRef.current);
 
   const debouncedQuery = useDebounce(queryInput, 300);
@@ -214,8 +215,8 @@ function App() {
         </p>
 
         <h2 className="sr-only">薬局を検索</h2>
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-6" role="search">
-          <div>
+        <div role="search">
+          <div className="bg-white rounded-xl shadow-sm p-4 mb-3">
             <LocationButton
               onClick={handleGetCurrentLocation}
               loading={locationLoading}
@@ -227,71 +228,80 @@ function App() {
             )}
           </div>
 
-          <div className="flex items-center gap-3 my-4">
-            <div className="flex-1 border-t border-gray-200" />
-            <span className="text-xs text-gray-400">または</span>
-            <div className="flex-1 border-t border-gray-200" />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-              <SearchBar value={queryInput} onChange={setQueryInput} />
-            </div>
-            <div>
-              <PrefectureFilter
-                value={searchParams.prefecture || ''}
-                onChange={handlePrefectureChange}
-                counts={prefectureCounts}
-              />
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <FilterPanel
-              searchParams={searchParams}
-              setSearchParams={handleFilterChange}
-            />
-          </div>
-        </div>
-
-        {userLocation && (
-          <div className="mb-3">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-sm font-medium text-gray-700">距離で絞り込み</span>
-              {inferredPrefecture && (
-                <span className="text-xs text-gray-400">
-                  現在地は{inferredPrefecture}付近
-                </span>
+          <div className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 py-2 mb-4 border-b border-gray-100">
+            <div className="bg-white rounded-xl shadow-sm p-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="md:col-span-2">
+                  <SearchBar value={queryInput} onChange={setQueryInput} />
+                </div>
+                <div>
+                  <PrefectureFilter
+                    value={searchParams.prefecture || ''}
+                    onChange={handlePrefectureChange}
+                    counts={prefectureCounts}
+                  />
+                </div>
+              </div>
+              <div className="mt-3">
+                <FilterPanel
+                  searchParams={searchParams}
+                  setSearchParams={handleFilterChange}
+                />
+              </div>
+              {userLocation && (
+                <div className="mt-3">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-sm font-medium text-gray-700">距離で絞り込み</span>
+                    {inferredPrefecture && (
+                      <span className="text-xs text-gray-400">
+                        現在地は{inferredPrefecture}付近
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-1" role="group" aria-label="検索半径">
+                    {RADIUS_OPTIONS.map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => handleRadiusChange(r)}
+                        aria-pressed={searchParams.radius === r}
+                        className={`flex-1 py-1.5 text-sm font-medium rounded transition-colors ${
+                          searchParams.radius === r
+                            ? 'bg-[#65BBE9] text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {r}km
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
-            <div className="flex gap-1" role="group" aria-label="検索半径">
-              {RADIUS_OPTIONS.map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => handleRadiusChange(r)}
-                  aria-pressed={searchParams.radius === r}
-                  className={`flex-1 py-1.5 text-sm font-medium rounded transition-colors ${
-                    searchParams.radius === r
-                      ? 'bg-[#65BBE9] text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {r}km
-                </button>
-              ))}
-            </div>
           </div>
-        )}
+        </div>
 
         <div
           id="results"
           ref={resultAreaRef}
-          className="text-sm text-gray-600 mb-4 px-1 transition-opacity duration-200"
+          className="text-sm text-gray-600 mb-4 px-1 transition-opacity duration-200 scroll-mt-36"
           aria-live="polite"
         >
           {loading ? (
             <span className="text-gray-400">お近くの薬局を探しています...</span>
+          ) : userLocation && searchParams.radius && locationSearch.fallback === 'prefecture' && locationSearch.prefecture ? (
+            <span>
+              {searchParams.radius}km以内の地図登録は見つかりませんでした。
+              <strong className="text-gray-900">{locationSearch.prefecture}</strong>の
+              {' '}<strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong> 件を表示しています
+            </span>
+          ) : userLocation && searchParams.radius && locationSearch.fallback === 'ungeocoded' ? (
+            <span>
+              {searchParams.radius}km以内 <strong className="text-gray-900">{locationSearch.nearbyCount.toLocaleString()}</strong> 件
+              {locationSearch.prefecture
+                ? `（ほか${locationSearch.prefecture}の地図未登録を含む 計 ${pharmacies.length.toLocaleString()} 件）`
+                : ''}
+            </span>
           ) : userLocation && searchParams.radius ? (
             <span>
               {searchParams.radius}km以内に <strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong> 件の薬局があります
@@ -324,7 +334,19 @@ function App() {
           </p>
         )}
 
-        {userLocation && pharmacies.length > 0 && pharmacies.length < 3 && inferredPrefecture && searchParams.radius && (
+        {userLocation && locationSearch.fallback === 'prefecture' && locationSearch.prefecture && (
+          <div className="mb-3 px-3 py-2 text-sm bg-[#EBF6FC] text-gray-700 rounded-lg">
+            近くの地図登録が見つからなかったため、{locationSearch.prefecture}の薬局を表示しています。距離が分かる薬局から順に並んでいます。
+          </div>
+        )}
+
+        {userLocation && locationSearch.fallback === 'ungeocoded' && locationSearch.prefecture && (
+          <p className="text-xs text-gray-500 px-1 mb-2">
+            距離が分かる薬局のあとに、{locationSearch.prefecture}の地図未登録の薬局を続けて表示しています。
+          </p>
+        )}
+
+        {userLocation && pharmacies.length > 0 && pharmacies.length < 3 && inferredPrefecture && searchParams.radius && locationSearch.fallback === 'none' && (
           <div className="mb-3 px-3 py-2 text-sm bg-[#EBF6FC] text-gray-700 rounded-lg">
             近くの地図登録は少なめです。
             <button
@@ -388,6 +410,7 @@ function App() {
             onResetFilters={handleResetFilters}
             onRetry={refetch}
             onSelectPharmacy={setSelectedPharmacy}
+            hasUserLocation={!!userLocation}
             emptyActions={{
               nextRadius: userLocation ? nextRadius : undefined,
               onExpandRadius: nextRadius ? () => handleRadiusChange(nextRadius) : undefined,

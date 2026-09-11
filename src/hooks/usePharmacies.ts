@@ -7,7 +7,17 @@ import type {
   GeoLocation 
 } from '../types/pharmacy';
 import { calculateDistance } from '../utils/distance';
-import { supportsAfterHoursFilter } from '../utils/pharmacyAvailability';
+import { inferPrefecture } from '../utils/prefectureFromLocation';
+import { isLikelyInJapan } from '../utils/japanBounds';
+import { isLikelyOpenNow, supportsAfterHoursFilter } from '../utils/pharmacyAvailability';
+
+export type LocationFallback = 'none' | 'ungeocoded' | 'prefecture';
+
+export interface LocationSearchInfo {
+  nearbyCount: number;
+  fallback: LocationFallback;
+  prefecture: string | null;
+}
 
 interface UsePharmaciesReturn {
   pharmacies: PharmacyWithDistance[];
@@ -18,6 +28,7 @@ interface UsePharmaciesReturn {
   setSearchParams: (params: Partial<SearchParams>) => void;
   refetch: () => void;
   prefectureCounts: Record<string, number>;
+  locationSearch: LocationSearchInfo;
 }
 
 const API_BASE = '/api';
@@ -69,7 +80,7 @@ export function usePharmacies(
   }, []);
 
   // フィルタリング・ソート済みの薬局リスト
-  const pharmacies = useMemo(() => {
+  const { pharmacies, locationSearch } = useMemo(() => {
     let filtered = [...allPharmacies];
 
     // 都道府県フィルター
@@ -106,9 +117,18 @@ export function usePharmacies(
       );
     }
 
-    // 距離計算と位置フィルター
+    const inferredPrefecture = userLocation
+      ? inferPrefecture(userLocation.lat, userLocation.lng)
+      : null;
+    const fallbackPrefecture = searchParams.prefecture || inferredPrefecture;
+
     const withDistance: PharmacyWithDistance[] = filtered.map(p => {
-      if (userLocation && p.lat !== null && p.lng !== null) {
+      if (
+        userLocation &&
+        p.lat !== null &&
+        p.lng !== null &&
+        isLikelyInJapan(p.lat, p.lng)
+      ) {
         return {
           ...p,
           distance: calculateDistance(
@@ -122,33 +142,79 @@ export function usePharmacies(
       return { ...p, distance: undefined };
     });
 
-    // 半径フィルター
     let result = withDistance;
+    let nearbyCount = 0;
+    let fallback: LocationFallback = 'none';
+
     if (userLocation && searchParams.radius) {
-      result = withDistance.filter(p => 
+      const nearby = withDistance.filter(p =>
         p.distance !== undefined && p.distance <= searchParams.radius!
       );
+      nearbyCount = nearby.length;
+
+      if (nearby.length === 0 && fallbackPrefecture) {
+        result = withDistance.filter(p => p.prefecture === fallbackPrefecture);
+        fallback = result.length > 0 ? 'prefecture' : 'none';
+      } else {
+        const ungeocoded = fallbackPrefecture
+          ? withDistance.filter(p =>
+            p.distance === undefined && p.prefecture === fallbackPrefecture
+          )
+          : [];
+        result = nearby.concat(ungeocoded);
+        fallback = ungeocoded.length > 0 ? 'ungeocoded' : 'none';
+      }
+    } else {
+      nearbyCount = withDistance.filter(p => p.distance !== undefined).length;
     }
 
-    // ソート（距離がある場合は距離順、なければ都道府県→名前順）
+    const openIds = new Set(
+      result.filter(p => isLikelyOpenNow(p.businessHours)).map(p => p.id)
+    );
+
     if (userLocation) {
       result.sort((a, b) => {
-        if (a.distance !== undefined && b.distance !== undefined) {
-          return a.distance - b.distance;
+        const aHas = a.distance !== undefined;
+        const bHas = b.distance !== undefined;
+        if (aHas && bHas) {
+          const delta = a.distance! - b.distance!;
+          if (Math.abs(delta) >= 0.05) {
+            return delta;
+          }
+        } else if (aHas !== bHas) {
+          return aHas ? -1 : 1;
         }
-        if (a.distance !== undefined) return -1;
-        if (b.distance !== undefined) return 1;
-        return 0;
+
+        const aOpen = openIds.has(a.id);
+        const bOpen = openIds.has(b.id);
+        if (aOpen !== bOpen) {
+          return aOpen ? -1 : 1;
+        }
+        return a.name.localeCompare(b.name, 'ja');
       });
     } else {
       result.sort((a, b) => {
-        const prefCompare = a.prefecture.localeCompare(b.prefecture);
-        if (prefCompare !== 0) return prefCompare;
-        return a.name.localeCompare(b.name);
+        const aOpen = openIds.has(a.id);
+        const bOpen = openIds.has(b.id);
+        if (aOpen !== bOpen) {
+          return aOpen ? -1 : 1;
+        }
+        const prefCompare = a.prefecture.localeCompare(b.prefecture, 'ja');
+        if (prefCompare !== 0) {
+          return prefCompare;
+        }
+        return a.name.localeCompare(b.name, 'ja');
       });
     }
 
-    return result;
+    return {
+      pharmacies: result,
+      locationSearch: {
+        nearbyCount,
+        fallback,
+        prefecture: fallbackPrefecture,
+      },
+    };
   }, [allPharmacies, searchParams, userLocation]);
 
   // 都道府県ごとの薬局数
@@ -169,5 +235,6 @@ export function usePharmacies(
     setSearchParams,
     refetch: fetchPharmacies,
     prefectureCounts,
+    locationSearch,
   };
 }

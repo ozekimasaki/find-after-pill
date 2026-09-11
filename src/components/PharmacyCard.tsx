@@ -1,11 +1,12 @@
 import type { PharmacyWithDistance } from '../types/pharmacy';
 import { formatDistance } from '../utils/distance';
 import { hasAfterHoursSupport, isLikelyOpenNow } from '../utils/pharmacyAvailability';
-import { toTelHref } from '../utils/phone';
+import { toTelHref, formatPhoneDisplay } from '../utils/phone';
 
 interface PharmacyCardProps {
   pharmacy: PharmacyWithDistance;
   onClick?: () => void;
+  hasUserLocation?: boolean;
 }
 
 function formatShortHours(hours: string): string {
@@ -16,7 +17,7 @@ function formatShortHours(hours: string): string {
   return hours;
 }
 
-export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
+export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: PharmacyCardProps) {
   const getGoogleMapsRouteUrl = () => {
     if (pharmacy.lat !== null && pharmacy.lng !== null) {
       return `https://www.google.com/maps/dir/?api=1&destination=${pharmacy.lat},${pharmacy.lng}`;
@@ -45,6 +46,11 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
               {formatDistance(pharmacy.distance)}
             </span>
           )}
+          {hasUserLocation && pharmacy.distance === undefined && (
+            <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded">
+              距離未計測
+            </span>
+          )}
         </div>
       </div>
 
@@ -65,7 +71,7 @@ export function PharmacyCard({ pharmacy, onClick }: PharmacyCardProps) {
             onClick={(e) => e.stopPropagation()}
             className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline"
           >
-            {pharmacy.phone}
+            {formatPhoneDisplay(pharmacy.phone)}
           </a>
         </p>
       )}

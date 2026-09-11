@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import type { PharmacyWithDistance } from '../types/pharmacy';
 import { formatDistance } from '../utils/distance';
 import { isLikelyOpenNow } from '../utils/pharmacyAvailability';
-import { toTelHref } from '../utils/phone';
+import { toTelHref, formatPhoneDisplay } from '../utils/phone';
 
 interface PharmacyDetailProps {
   pharmacy: PharmacyWithDistance;
@@ -129,7 +129,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
 
   // Share / Copy
   const handleShare = async () => {
-    const shareText = `${pharmacy.name}\n${pharmacy.address}\n${pharmacy.phone || ''}`.trim();
+    const shareText = `${pharmacy.name}\n${pharmacy.address}\n${pharmacy.phone ? formatPhoneDisplay(pharmacy.phone) : ''}`.trim();
     if (navigator.share) {
       try {
         await navigator.share({ text: shareText });
@@ -227,7 +227,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
                 label="電話番号"
                 value={
                   <a href={toTelHref(pharmacy.phone)} className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline">
-                    {pharmacy.phone}
+                    {formatPhoneDisplay(pharmacy.phone)}
                   </a>
                 }
               />
@@ -295,7 +295,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
                       <div className="mt-1">
                         <span className="text-sm text-gray-500">時間外電話: </span>
                         <a href={toTelHref(pharmacy.afterHoursPhone)} className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline">
-                          {pharmacy.afterHoursPhone}
+                          {formatPhoneDisplay(pharmacy.afterHoursPhone)}
                         </a>
                       </div>
                     )}

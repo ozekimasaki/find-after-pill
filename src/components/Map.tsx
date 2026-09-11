@@ -5,7 +5,8 @@ import 'leaflet.markercluster';
 import type { PharmacyWithDistance } from '../types/pharmacy';
 import type { GeoLocation } from '../types/pharmacy';
 import { formatDistance } from '../utils/distance';
-import { toTelHref } from '../utils/phone';
+import { toTelHref, formatPhoneDisplay } from '../utils/phone';
+import { isLikelyInJapan } from '../utils/japanBounds';
 
 // Leafletのデフォルトアイコンを修正
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -95,13 +96,14 @@ function MarkerLayer({
 
     pharmacies.forEach((p) => {
       if (p.lat === null || p.lng === null) return;
+      if (!isLikelyInJapan(p.lat, p.lng)) return;
       bounded.push([p.lat, p.lng]);
       const marker = L.marker([p.lat, p.lng], { icon: pharmacyIcon });
 
       let popupContent = `<div style="min-width:200px"><h3 style="font-weight:bold;color:#111827;margin:0">${escapeHtml(p.name)}</h3>`;
       popupContent += `<p style="font-size:0.875rem;color:#4b5563;margin-top:4px">${escapeHtml(p.address)}</p>`;
       if (p.phone) {
-        popupContent += `<p style="font-size:0.875rem;margin-top:4px"><a href="${toTelHref(p.phone)}" style="color:#65BBE9;text-decoration:none">${escapeHtml(p.phone)}</a></p>`;
+        popupContent += `<p style="font-size:0.875rem;margin-top:4px"><a href="${toTelHref(p.phone)}" style="color:#65BBE9;text-decoration:none">${escapeHtml(formatPhoneDisplay(p.phone))}</a></p>`;
       }
       if (p.distance !== undefined) {
         popupContent += `<p style="font-size:0.875rem;color:#65BBE9;margin-top:4px">${formatDistance(p.distance)}</p>`;
@@ -143,7 +145,9 @@ function escapeHtml(str: string): string {
 
 export function Map({ pharmacies, userLocation, onSelectPharmacy }: MapProps) {
   // 座標のある薬局のみ
-  const mappablePharmacies = pharmacies.filter(p => p.lat !== null && p.lng !== null);
+  const mappablePharmacies = pharmacies.filter(p =>
+    p.lat !== null && p.lng !== null && isLikelyInJapan(p.lat, p.lng)
+  );
   const limitedPharmacies = userLocation
     ? mappablePharmacies.slice(0, MAP_MARKER_LIMIT)
     : mappablePharmacies.length > MAP_MARKER_LIMIT
