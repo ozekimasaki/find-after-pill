@@ -33,12 +33,14 @@ function formatMeridiemTime(meridiem: string, hour: string, minute = '00'): stri
 function normalizeBusinessHours(hours: string): string {
   return hours
     .normalize('NFKC')
+    .replace(/365,?日/g, '年中無休')
     .replace(/月から金(?:曜日)?/g, '月-金')
     .replace(/月から土(?:曜日)?/g, '月-土')
     .replace(/月から日(?:曜日)?/g, '月-日')
     .replace(/([月火水木金土日])から([月火水木金土日])/g, '$1-$2')
     .replace(/平日/g, '月-金')
     .replace(/([月火水木金土日])曜(?:日)?/g, '$1')
+    .replace(/[（(]([月火水木金土日祝])[）)]/g, '$1')
     .replace(/祝日/g, '祝')
     .replace(/(午前|午後)(\d{1,2})時半(?!間)/g, (_, meridiem: string, hour: string) => formatMeridiemTime(meridiem, hour, '30'))
     .replace(/(\d{1,2})時(?=\d{1,2}時)/g, '$1:00-')
@@ -60,6 +62,24 @@ function normalizeBusinessHours(hours: string): string {
     .replace(/-+/g, '-')
     .replace(/(\d)([月火水木金土日祝])/g, '$1,$2')
     .replace(/([休閉])([月火水木金土日祝])/g, '$1,$2');
+}
+
+function hasClockRange(value: string): boolean {
+  return /(\d{1,2})(?::(\d{2}))?\s*-\s*(\d{1,2})(?::(\d{2}))?/.test(value);
+}
+
+function nextDayContext(between: string, current: string): string {
+  const withoutEveryDay = between.replace(/年中無休|定休日なし|休業日なし|24時間/g, '');
+  if (DAY_CONTEXT_PATTERN.test(withoutEveryDay)) {
+    return withoutEveryDay;
+  }
+  if (ALWAYS_OPEN_PATTERN.test(between) || /24時間/.test(between)) {
+    return '';
+  }
+  if (DAY_CONTEXT_PATTERN.test(between)) {
+    return between;
+  }
+  return current;
 }
 
 function isClosedContext(context: string): boolean {
@@ -120,9 +140,7 @@ export function hasWeekendOrHolidayHours(businessHours?: string | null): boolean
   for (const match of normalized.matchAll(TIME_RANGE_PATTERN)) {
     const index = match.index ?? 0;
     const between = normalized.slice(cursor, index);
-    if (DAY_CONTEXT_PATTERN.test(between)) {
-      currentContext = between;
-    }
+    currentContext = nextDayContext(between, currentContext);
     cursor = index + match[0].length;
 
     if (WEEKEND_OR_HOLIDAY_PATTERN.test(currentContext) && !isClosedContext(currentContext)) {
@@ -145,7 +163,7 @@ export function hasLateBusinessHours(businessHours?: string | null): boolean {
     return false;
   }
 
-  if (ALWAYS_OPEN_PATTERN.test(normalized)) {
+  if (ALWAYS_OPEN_PATTERN.test(normalized) && !hasClockRange(normalized)) {
     return true;
   }
 
@@ -223,7 +241,7 @@ export function isLikelyOpenNow(businessHours?: string | null, now: Date = new D
     return false;
   }
 
-  if (ALWAYS_OPEN_PATTERN.test(normalized) || /24時間/.test(normalized)) {
+  if (ALWAYS_OPEN_PATTERN.test(normalized) && !hasClockRange(normalized)) {
     return true;
   }
 
@@ -234,9 +252,7 @@ export function isLikelyOpenNow(businessHours?: string | null, now: Date = new D
   for (const match of normalized.matchAll(TIME_RANGE_PATTERN)) {
     const index = match.index ?? 0;
     const between = normalized.slice(cursor, index);
-    if (DAY_CONTEXT_PATTERN.test(between)) {
-      currentContext = between;
-    }
+    currentContext = nextDayContext(between, currentContext);
     cursor = index + match[0].length;
 
     if (isClosedContext(currentContext)) {
@@ -301,9 +317,7 @@ export function formatTodayHours(businessHours?: string | null, now: Date = new 
   for (const match of normalized.matchAll(TIME_RANGE_PATTERN)) {
     const index = match.index ?? 0;
     const between = normalized.slice(cursor, index);
-    if (DAY_CONTEXT_PATTERN.test(between)) {
-      currentContext = between;
-    }
+    currentContext = nextDayContext(between, currentContext);
     cursor = index + match[0].length;
 
     const startHour = match[1] ?? '0';
