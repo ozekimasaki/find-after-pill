@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { PharmacyWithDistance } from '../types/pharmacy';
 import { PharmacyCard } from './PharmacyCard';
 import { extractMunicipality } from '../utils/municipality';
+import { shortMunicipalityLabel } from '../utils/municipalityRank';
 
 interface PharmacyListEmptyActions {
   nextRadius?: number;
@@ -182,7 +183,7 @@ export function PharmacyList({
             >
               {showHeader && (
                 <p className="text-sm font-medium text-gray-500 px-1 pb-1.5 scroll-mt-36 md:scroll-mt-44">
-                  {city}
+                  {shortMunicipalityLabel(city ?? 'その他', preferredMunicipality)}
                   {preferredMunicipality === city ? ' · 現在地付近' : ''}
                 </p>
               )}

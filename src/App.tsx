@@ -11,6 +11,7 @@ import { Map } from './components/Map';
 import { FAQ } from './components/FAQ';
 import { PharmacyDetail } from './components/PharmacyDetail';
 import { MunicipalityChips } from './components/MunicipalityChips';
+import { FilterToggleButton } from './components/FilterToggleButton';
 import { useGeolocation } from './hooks/useGeolocation';
 import { usePharmacies } from './hooks/usePharmacies';
 import { useReverseMunicipality } from './hooks/useReverseMunicipality';
@@ -18,6 +19,7 @@ import { useDebounce } from './hooks/useDebounce';
 import { isAfterHoursJst } from './utils/pharmacyAvailability';
 import { inferPrefecture } from './utils/prefectureFromLocation';
 import { matchKnownMunicipality } from './utils/reverseMunicipality';
+import { shortMunicipalityLabel } from './utils/municipalityRank';
 import {
   DEFAULT_RADIUS,
   RADIUS_OPTIONS,
@@ -107,7 +109,9 @@ function App() {
   const cityQuery = searchParams.query && municipalityCounts[searchParams.query]
     ? searchParams.query
     : undefined;
-  const locationLabel = preferredCity || inferredPrefecture;
+  const locationLabel = preferredCity
+    ? shortMunicipalityLabel(preferredCity, preferredCity)
+    : inferredPrefecture;
   const extraFilterCount = [
     searchParams.openNowOnly,
     searchParams.afterHoursOnly,
@@ -311,9 +315,9 @@ function App() {
           role="search"
           className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 py-1.5 mb-3 border-b border-gray-100"
         >
-            <div className="bg-white rounded-xl shadow-sm p-2.5 md:p-3">
+            <div className="bg-white rounded-xl shadow-sm p-2 md:p-3">
               {userLocation && (
-                <div className="flex flex-wrap items-center gap-2 mb-2 text-xs text-gray-500">
+                <div className="flex flex-wrap items-center gap-2 mb-1.5 text-xs text-gray-500">
                   <span className="shrink-0">
                     現在地{locationLabel ? `（${locationLabel}）` : ''}
                   </span>
@@ -329,7 +333,7 @@ function App() {
                     role="group"
                     aria-label="検索半径"
                   >
-                    {RADIUS_OPTIONS.map((r) => (
+                    {RADIUS_OPTIONS.filter((r) => r === 5 || r === 10 || r === 20 || r === searchParams.radius).map((r) => (
                       <button
                         key={r}
                         type="button"
@@ -352,23 +356,12 @@ function App() {
                 <div className="min-w-0 flex-1 md:col-span-2">
                   <SearchBar value={queryInput} onChange={setQueryInput} />
                 </div>
-                {userLocation && !extrasOpen && (
-                  <button
-                    type="button"
-                    onClick={() => setFiltersPinned(true)}
-                    className="md:hidden shrink-0 text-sm text-[#4AA8D9] whitespace-nowrap"
-                  >
-                    絞り込み{extraFilterCount > 0 ? `（${extraFilterCount}）` : ''}
-                  </button>
-                )}
-                {userLocation && extrasOpen && (
-                  <button
-                    type="button"
-                    onClick={() => setFiltersPinned(false)}
-                    className="md:hidden shrink-0 text-sm text-[#4AA8D9] whitespace-nowrap"
-                  >
-                    とじる
-                  </button>
+                {userLocation && (
+                  <FilterToggleButton
+                    open={extrasOpen}
+                    count={extraFilterCount}
+                    onClick={() => setFiltersPinned((current) => !current)}
+                  />
                 )}
                 <div className={`w-[9.25rem] shrink-0 md:w-auto ${userLocation ? 'hidden md:block' : ''}`}>
                   <PrefectureFilter
@@ -447,7 +440,7 @@ function App() {
               <strong className="text-gray-900">{locationSearch.prefecture}</strong>
               {' '}<strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong>件
               {preferredCity ? (
-                <span className="text-gray-400"> · {preferredCity}を先頭に</span>
+                <span className="text-gray-400"> · {shortMunicipalityLabel(preferredCity, preferredCity)}を先頭に</span>
               ) : null}
             </span>
           ) : userLocation && searchParams.radius && locationSearch.fallback === 'ungeocoded' ? (

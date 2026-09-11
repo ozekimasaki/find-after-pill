@@ -1,8 +1,22 @@
 import { MUNICIPALITY_NEIGHBORS } from '../data/municipalityNeighbors';
 
-function parentCityName(name: string): string | null {
+export function parentCityName(name: string): string | null {
   const match = name.match(/^(.+?市)/);
   return match?.[1] ?? null;
+}
+
+export function shortMunicipalityLabel(name: string, context?: string | null): string {
+  if (!context) {
+    return name;
+  }
+
+  const parent = parentCityName(name);
+  const contextParent = parentCityName(context);
+  if (parent && contextParent && parent === contextParent) {
+    return name.slice(parent.length) || name;
+  }
+
+  return name;
 }
 
 function proximityRank(preferred: string, name: string): number {

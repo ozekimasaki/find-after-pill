@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { compareMunicipalityNames } from '../utils/municipalityRank';
+import { compareMunicipalityNames, shortMunicipalityLabel } from '../utils/municipalityRank';
 
 interface MunicipalityChipsProps {
   counts: Record<string, number>;
@@ -66,6 +66,7 @@ export function MunicipalityChips({
               onClick={() => onSelect(name)}
               aria-pressed={isActive}
               aria-current={preferred === name ? 'true' : undefined}
+              aria-label={`${name} ${count.toLocaleString()}件`}
               className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs sm:text-sm rounded-full border whitespace-nowrap ${
                 isActive
                   ? 'bg-[#65BBE9] text-white border-transparent'
@@ -74,7 +75,7 @@ export function MunicipalityChips({
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}
             >
-              {name}
+              {shortMunicipalityLabel(name, preferred)}
               <span className={isActive ? 'text-white/90' : 'text-gray-400'}>
                 {count.toLocaleString()}
               </span>
@@ -87,7 +88,7 @@ export function MunicipalityChips({
             onClick={() => setExpanded((current) => !current)}
             className="inline-flex items-center px-2 py-0.5 text-xs sm:text-sm text-[#4AA8D9] rounded-full border border-transparent hover:bg-[#EBF6FC]"
           >
-            {expanded ? 'とじる' : `ほか${hiddenCount}の市区`}
+            {expanded ? 'とじる' : `ほか${hiddenCount}`}
           </button>
         )}
       </div>
