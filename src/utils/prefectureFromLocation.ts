@@ -1,5 +1,67 @@
 import { PREFECTURES, type Prefecture } from '../types/pharmacy';
 
+/** 都道府県庁付近。矩形が重なるときはここから近い県を選ぶ。 */
+const PREFECTURE_CENTERS: Record<Prefecture, { lat: number; lng: number }> = {
+  北海道: { lat: 43.064, lng: 141.347 },
+  青森県: { lat: 40.825, lng: 140.741 },
+  岩手県: { lat: 39.704, lng: 141.153 },
+  宮城県: { lat: 38.269, lng: 140.872 },
+  秋田県: { lat: 39.719, lng: 140.102 },
+  山形県: { lat: 38.240, lng: 140.364 },
+  福島県: { lat: 37.750, lng: 140.468 },
+  茨城県: { lat: 36.342, lng: 140.447 },
+  栃木県: { lat: 36.566, lng: 139.884 },
+  群馬県: { lat: 36.391, lng: 139.060 },
+  埼玉県: { lat: 35.857, lng: 139.649 },
+  千葉県: { lat: 35.605, lng: 140.123 },
+  東京都: { lat: 35.690, lng: 139.692 },
+  神奈川県: { lat: 35.448, lng: 139.643 },
+  新潟県: { lat: 37.902, lng: 139.023 },
+  富山県: { lat: 36.695, lng: 137.211 },
+  石川県: { lat: 36.595, lng: 136.626 },
+  福井県: { lat: 36.065, lng: 136.222 },
+  山梨県: { lat: 35.664, lng: 138.568 },
+  長野県: { lat: 36.651, lng: 138.181 },
+  岐阜県: { lat: 35.391, lng: 136.722 },
+  静岡県: { lat: 34.977, lng: 138.383 },
+  愛知県: { lat: 35.180, lng: 136.907 },
+  三重県: { lat: 34.730, lng: 136.509 },
+  滋賀県: { lat: 35.004, lng: 135.869 },
+  京都府: { lat: 35.021, lng: 135.756 },
+  大阪府: { lat: 34.686, lng: 135.520 },
+  兵庫県: { lat: 34.691, lng: 135.183 },
+  奈良県: { lat: 34.685, lng: 135.833 },
+  和歌山県: { lat: 34.226, lng: 135.168 },
+  鳥取県: { lat: 35.504, lng: 134.238 },
+  島根県: { lat: 35.472, lng: 133.051 },
+  岡山県: { lat: 34.662, lng: 133.935 },
+  広島県: { lat: 34.396, lng: 132.459 },
+  山口県: { lat: 34.186, lng: 131.471 },
+  徳島県: { lat: 34.066, lng: 134.559 },
+  香川県: { lat: 34.340, lng: 134.043 },
+  愛媛県: { lat: 33.842, lng: 132.766 },
+  高知県: { lat: 33.560, lng: 133.531 },
+  福岡県: { lat: 33.607, lng: 130.418 },
+  佐賀県: { lat: 33.249, lng: 130.299 },
+  長崎県: { lat: 32.750, lng: 129.868 },
+  熊本県: { lat: 32.790, lng: 130.742 },
+  大分県: { lat: 33.238, lng: 131.613 },
+  宮崎県: { lat: 31.911, lng: 131.424 },
+  鹿児島県: { lat: 31.560, lng: 130.558 },
+  沖縄県: { lat: 26.212, lng: 127.681 },
+};
+
+function distanceSquared(
+  lat: number,
+  lng: number,
+  centerLat: number,
+  centerLng: number
+): number {
+  const dLat = lat - centerLat;
+  const dLng = (lng - centerLng) * Math.cos(((lat + centerLat) / 2) * Math.PI / 180);
+  return dLat * dLat + dLng * dLng;
+}
+
 interface PrefectureBounds {
   name: Prefecture;
   minLat: number;
@@ -78,7 +140,22 @@ export function inferPrefecture(lat: number, lng: number): Prefecture | null {
     return null;
   }
 
-  matches.sort((a, b) => area(a) - area(b));
+  const names = new Set(matches.map((bounds) => bounds.name));
+  if (names.has('東京都') && names.has('神奈川県')) {
+    return lat >= 35.545 ? '東京都' : '神奈川県';
+  }
+
+  matches.sort((a, b) => {
+    const centerA = PREFECTURE_CENTERS[a.name];
+    const centerB = PREFECTURE_CENTERS[b.name];
+    const byCenter =
+      distanceSquared(lat, lng, centerA.lat, centerA.lng)
+      - distanceSquared(lat, lng, centerB.lat, centerB.lng);
+    if (byCenter !== 0) {
+      return byCenter;
+    }
+    return area(a) - area(b);
+  });
   return matches[0].name;
 }
 

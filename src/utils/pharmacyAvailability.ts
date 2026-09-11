@@ -296,6 +296,7 @@ export function formatTodayHours(businessHours?: string | null, now: Date = new 
   let currentContext = '';
   let cursor = 0;
   let sawTodayClosed = false;
+  let sawDaySpecific = false;
 
   for (const match of normalized.matchAll(TIME_RANGE_PATTERN)) {
     const index = match.index ?? 0;
@@ -312,8 +313,11 @@ export function formatTodayHours(businessHours?: string | null, now: Date = new 
     }
 
     const days = expandDaysFromContext(currentContext);
-    if (days && !days.has(dayIndex)) {
-      continue;
+    if (days) {
+      sawDaySpecific = true;
+      if (!days.has(dayIndex)) {
+        continue;
+      }
     }
 
     if (isClosedContext(currentContext)) {
@@ -334,7 +338,7 @@ export function formatTodayHours(businessHours?: string | null, now: Date = new 
     return unique.length > 2 ? `${shown} 他` : shown;
   }
 
-  if (sawTodayClosed) {
+  if (sawTodayClosed || sawDaySpecific) {
     return '本日休み';
   }
 

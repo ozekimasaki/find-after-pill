@@ -198,7 +198,13 @@ export function usePharmacies(
       return a.name.localeCompare(b.name, 'ja');
     };
 
-    if (userLocation) {
+    const groupByMunicipality = Boolean(
+      !searchParams.query && (
+        fallback === 'prefecture' || (!userLocation && !!searchParams.prefecture)
+      )
+    );
+
+    if (userLocation && !groupByMunicipality) {
       result.sort((a, b) => {
         const aHas = a.distance !== undefined;
         const bHas = b.distance !== undefined;
@@ -212,8 +218,24 @@ export function usePharmacies(
         }
         return compareOpenThenName(a, b);
       });
-    } else if (searchParams.prefecture) {
-      result.sort(compareOpenThenName);
+    } else if (groupByMunicipality) {
+      const cityCounts: Record<string, number> = {};
+      for (const pharmacy of result) {
+        const city = extractMunicipality(pharmacy.address, pharmacy.prefecture) ?? 'その他';
+        cityCounts[city] = (cityCounts[city] || 0) + 1;
+      }
+      result.sort((a, b) => {
+        const cityA = extractMunicipality(a.address, a.prefecture) ?? 'その他';
+        const cityB = extractMunicipality(b.address, b.prefecture) ?? 'その他';
+        const countDelta = (cityCounts[cityB] || 0) - (cityCounts[cityA] || 0);
+        if (countDelta !== 0) {
+          return countDelta;
+        }
+        if (cityA !== cityB) {
+          return cityA.localeCompare(cityB, 'ja');
+        }
+        return compareOpenThenName(a, b);
+      });
     } else {
       result.sort((a, b) => {
         const prefDelta = prefectureSortIndex(a.prefecture) - prefectureSortIndex(b.prefecture);

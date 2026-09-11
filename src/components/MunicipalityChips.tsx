@@ -30,9 +30,10 @@ export function MunicipalityChips({ counts, selected, onSelect }: MunicipalityCh
             <button
               key={name}
               type="button"
+              onMouseDown={(event) => event.preventDefault()}
               onClick={() => onSelect(name)}
               aria-pressed={isActive}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 text-sm rounded-full border whitespace-nowrap ${
+              className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full border whitespace-nowrap ${
                 isActive
                   ? 'bg-[#65BBE9] text-white border-transparent'
                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -49,7 +50,7 @@ export function MunicipalityChips({ counts, selected, onSelect }: MunicipalityCh
           <button
             type="button"
             onClick={() => setExpanded((current) => !current)}
-            className="inline-flex items-center px-2.5 py-1 text-sm text-[#4AA8D9] rounded-full border border-transparent hover:bg-[#EBF6FC]"
+            className="inline-flex items-center px-2 py-0.5 text-sm text-[#4AA8D9] rounded-full border border-transparent hover:bg-[#EBF6FC]"
           >
             {expanded ? 'とじる' : `ほか${cities.length - PREVIEW_COUNT}の市区`}
           </button>

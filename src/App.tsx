@@ -270,7 +270,7 @@ function App() {
       <Header meta={meta} loadedCount={loadedCount} />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-4 sm:py-6">
-        <SupportBanner />
+        {!userLocation && <SupportBanner />}
 
         {!userLocation && (
           <p className="text-sm text-gray-500 mb-3 px-1">
@@ -453,12 +453,6 @@ function App() {
           </p>
         )}
 
-        {userLocation && locationSearch.fallback === 'ungeocoded' && locationSearch.prefecture && (
-          <p className="text-xs text-gray-500 px-1 mb-2">
-            距離が分かる薬局のあとに、{locationSearch.prefecture}の地図未登録の薬局を続けて表示しています。
-          </p>
-        )}
-
         {userLocation && pharmacies.length > 0 && pharmacies.length < 3 && inferredPrefecture && searchParams.radius && locationSearch.fallback === 'none' && (
           <div className="mb-3 px-3 py-2 text-sm bg-[#EBF6FC] text-gray-700 rounded-lg">
             近くの地図登録は少なめです。
@@ -521,6 +515,12 @@ function App() {
             onResetFilters={handleResetFilters}
             onRetry={refetch}
             onSelectPharmacy={setSelectedPharmacy}
+            groupByMunicipality={
+              !searchParams.query && (
+                locationSearch.fallback === 'prefecture'
+                || (!userLocation && !!searchParams.prefecture)
+              )
+            }
             showUnmeasuredDistance={
               !!userLocation && pharmacies.some((pharmacy) => pharmacy.distance !== undefined)
             }

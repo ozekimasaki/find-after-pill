@@ -1,5 +1,5 @@
 import { Env, KV_KEYS } from './types';
-import type { Pharmacy, PharmacyMeta } from '../src/types/pharmacy';
+import type { Pharmacy, PharmacyMeta, PharmacyWithDistance } from '../src/types/pharmacy';
 import { dedupePharmacies } from '../src/utils/pharmacyIdentity';
 
 /**
@@ -132,14 +132,15 @@ async function handleApiRequest(request: Request, env: Env): Promise<Response> {
         const userLng = parseFloat(lng);
         const searchRadius = radius ? parseFloat(radius) : 10; // デフォルト10km
 
-        pharmacies = pharmacies
+        const nearby: PharmacyWithDistance[] = pharmacies
           .filter(p => p.lat !== null && p.lng !== null)
           .map(p => ({
             ...p,
             distance: calculateDistance(userLat, userLng, p.lat!, p.lng!),
           }))
-          .filter(p => (p as any).distance <= searchRadius)
-          .sort((a, b) => (a as any).distance - (b as any).distance);
+          .filter(p => (p.distance ?? Number.POSITIVE_INFINITY) <= searchRadius)
+          .sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+        pharmacies = nearby;
       }
 
       return jsonResponse({ pharmacies, meta }, 200, API_CACHE_HEADERS);

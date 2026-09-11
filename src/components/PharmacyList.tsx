@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { PharmacyWithDistance } from '../types/pharmacy';
 import { PharmacyCard } from './PharmacyCard';
+import { extractMunicipality } from '../utils/municipality';
 
 interface PharmacyListEmptyActions {
   nextRadius?: number;
@@ -21,6 +22,7 @@ interface PharmacyListProps {
   onRetry?: () => void;
   onSelectPharmacy: (pharmacy: PharmacyWithDistance) => void;
   showUnmeasuredDistance?: boolean;
+  groupByMunicipality?: boolean;
   emptyActions?: PharmacyListEmptyActions;
 }
 
@@ -55,6 +57,7 @@ export function PharmacyList({
   onRetry,
   onSelectPharmacy,
   showUnmeasuredDistance = false,
+  groupByMunicipality = false,
   emptyActions,
 }: PharmacyListProps) {
   const resultKey = `${pharmacies.length}:${pharmacies[0]?.id ?? ''}:${pharmacies[pharmacies.length - 1]?.id ?? ''}`;
@@ -159,19 +162,35 @@ export function PharmacyList({
   return (
     <>
       <div className="space-y-2.5">
-        {displayedPharmacies.map((pharmacy, index) => (
-          <div
-            key={pharmacy.id}
-            className="animate-fadeIn scroll-mt-24 md:scroll-mt-40"
-            style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
-          >
-            <PharmacyCard
-              pharmacy={pharmacy}
-              onClick={() => onSelectPharmacy(pharmacy)}
-              hasUserLocation={showUnmeasuredDistance}
-            />
-          </div>
-        ))}
+        {displayedPharmacies.map((pharmacy, index) => {
+          const city = groupByMunicipality
+            ? (extractMunicipality(pharmacy.address, pharmacy.prefecture) ?? 'その他')
+            : null;
+          const previous = index > 0 ? displayedPharmacies[index - 1] : null;
+          const previousCity = groupByMunicipality && previous
+            ? (extractMunicipality(previous.address, previous.prefecture) ?? 'その他')
+            : null;
+          const showHeader = Boolean(city && city !== previousCity);
+
+          return (
+            <div
+              key={pharmacy.id}
+              className="animate-fadeIn scroll-mt-24 md:scroll-mt-40"
+              style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
+            >
+              {showHeader && (
+                <p className="text-sm font-medium text-gray-500 px-1 pb-1.5 scroll-mt-24 md:scroll-mt-40">
+                  {city}
+                </p>
+              )}
+              <PharmacyCard
+                pharmacy={pharmacy}
+                onClick={() => onSelectPharmacy(pharmacy)}
+                hasUserLocation={showUnmeasuredDistance}
+              />
+            </div>
+          );
+        })}
       </div>
 
       {hasMore && (

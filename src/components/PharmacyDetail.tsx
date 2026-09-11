@@ -206,14 +206,9 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
               }
               label="住所"
               value={
-                <a
-                  href={googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block w-fit max-w-full break-words text-[#65BBE9] hover:text-[#4AA8D9] hover:underline"
-                >
-                  {pharmacy.address}
-                </a>
+                <span className="inline-block w-fit max-w-full break-words">
+                  {pharmacy.address.normalize('NFKC')}
+                </span>
               }
             />
 

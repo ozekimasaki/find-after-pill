@@ -46,15 +46,29 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
         </div>
       </div>
 
-      <a
-        href={googleMapsUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={(e) => e.stopPropagation()}
-        className="mt-2 block w-fit max-w-full break-words text-gray-600 text-sm hover:text-[#65BBE9] transition-colors"
-      >
-        {pharmacy.address.normalize('NFKC')}
-      </a>
+      <div className="mt-1.5 flex items-start justify-between gap-3">
+        <p className="min-w-0 text-gray-600 text-sm break-words leading-snug">
+          {pharmacy.address.normalize('NFKC')}
+        </p>
+        <div className="flex shrink-0 items-center gap-3 pt-0.5">
+          <a
+            href={googleMapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-sm text-[#4AA8D9] hover:underline"
+          >
+            ルート
+          </a>
+          <button
+            type="button"
+            onClick={onClick}
+            className="text-sm text-[#4AA8D9] hover:underline"
+          >
+            詳細
+          </button>
+        </div>
+      </div>
 
       {/* 追加情報バッジ */}
       <div className="mt-2 flex flex-wrap gap-1.5">
@@ -100,28 +114,11 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
         )}
       </div>
 
-      <div className="mt-2.5 flex items-center gap-3">
-        <a
-          href={googleMapsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="text-sm text-[#4AA8D9] hover:underline"
-        >
-          ルート
-        </a>
-        <button
-          type="button"
-          onClick={onClick}
-          className="text-sm text-[#4AA8D9] hover:underline"
-        >
-          詳細
-        </button>
-      </div>
       {pharmacy.phone && (
         <a
           href={toTelHref(pharmacy.phone)}
           onClick={(e) => e.stopPropagation()}
+          aria-label={`電話する ${formatPhoneDisplay(pharmacy.phone)}`}
           className="mt-2 flex items-center justify-center gap-2 w-full px-3 py-2.5 text-white bg-[#65BBE9] rounded-lg hover:bg-[#4AA8D9] transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
