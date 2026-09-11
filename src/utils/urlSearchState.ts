@@ -25,6 +25,11 @@ export function parseUrlSearchState(search = window.location.search): UrlSearchS
     searchParams.query = query;
   }
 
+  const municipality = params.get('city')?.trim();
+  if (municipality) {
+    searchParams.municipality = municipality;
+  }
+
   const prefecture = params.get('pref')?.trim();
   if (prefecture) {
     searchParams.prefecture = prefecture;
@@ -72,6 +77,9 @@ export function replaceUrlSearchState(state: {
 
   if (searchParams.query) {
     params.set('q', searchParams.query);
+  }
+  if (searchParams.municipality) {
+    params.set('city', searchParams.municipality);
   }
   if (searchParams.prefecture) {
     params.set('pref', searchParams.prefecture);

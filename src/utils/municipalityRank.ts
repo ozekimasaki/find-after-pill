@@ -15,6 +15,12 @@ export function shortMunicipalityLabel(name: string, context?: string | null): s
     return name;
   }
 
+  const contextParent = parentCityName(context) ?? context;
+  const sameCity = context === name || context.startsWith(parent) || contextParent === parent;
+  if (!sameCity) {
+    return name;
+  }
+
   const rest = name.slice(parent.length);
   return rest || name;
 }

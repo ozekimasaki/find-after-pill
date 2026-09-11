@@ -106,6 +106,36 @@ export function usePharmacies(
       filtered = filtered.filter(p => p.prefecture === searchParams.prefecture);
     }
 
+    // 市区町村（チップ・現在地の自動絞り込み）
+    const targetPrefForCity = searchParams.prefecture
+      || (userLocation ? inferPrefecture(userLocation.lat, userLocation.lng) : null);
+    const cityCounts: Record<string, number> = {};
+    if (targetPrefForCity) {
+      for (const pharmacy of allPharmacies) {
+        if (pharmacy.prefecture !== targetPrefForCity) {
+          continue;
+        }
+        const city = extractMunicipality(pharmacy.address, pharmacy.prefecture);
+        if (city) {
+          cityCounts[city] = (cityCounts[city] || 0) + 1;
+        }
+      }
+    }
+    const matchedPreferred = preferredMunicipality
+      ? matchKnownMunicipality(preferredMunicipality, cityCounts)
+      : null;
+    const municipalityFilter = searchParams.municipality
+      ? searchParams.municipality
+      : (searchParams.municipality === undefined && !searchParams.query
+        ? matchedPreferred
+        : null);
+
+    if (municipalityFilter) {
+      filtered = filtered.filter((p) =>
+        extractMunicipality(p.address, p.prefecture) === municipalityFilter
+      );
+    }
+
     // フリーワード検索（ひらがな/カタカナ・電話番号も対象）
     if (searchParams.query) {
       filtered = filtered.filter((p) => pharmacyMatchesQuery(p, searchParams.query!));
@@ -202,7 +232,8 @@ export function usePharmacies(
     };
 
     const groupByMunicipality = Boolean(
-      !searchParams.query && (
+      !searchParams.query &&
+      !municipalityFilter && (
         fallback === 'prefecture' || (!userLocation && !!searchParams.prefecture)
       )
     );

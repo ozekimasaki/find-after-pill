@@ -70,6 +70,8 @@ export interface SearchParams {
   prefecture?: string;
   /** フリーワード検索 */
   query?: string;
+  /** 市区町村フィルター（政令市は区まで） */
+  municipality?: string;
   /** 現在地の緯度 */
   lat?: number;
   /** 現在地の経度 */

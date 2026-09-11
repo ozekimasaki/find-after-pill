@@ -1,14 +1,26 @@
+import { useEffect, useRef } from 'react';
+
 interface SearchBarProps {
   value: string;
   onChange: (query: string) => void;
   placeholder?: string;
+  autoFocus?: boolean;
 }
 
 export function SearchBar({
   value,
   onChange,
   placeholder = '店名・住所・電話',
+  autoFocus = false,
 }: SearchBarProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (autoFocus) {
+      inputRef.current?.focus();
+    }
+  }, [autoFocus]);
+
   return (
     <div className="relative">
       <label htmlFor="pharmacy-search" className="sr-only">
@@ -16,6 +28,7 @@ export function SearchBar({
       </label>
       <input
         id="pharmacy-search"
+        ref={inputRef}
         type="search"
         value={value}
         onChange={(e) => onChange(e.target.value)}

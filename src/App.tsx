@@ -12,6 +12,7 @@ import { FAQ } from './components/FAQ';
 import { PharmacyDetail } from './components/PharmacyDetail';
 import { MunicipalityChips } from './components/MunicipalityChips';
 import { FilterToggleButton } from './components/FilterToggleButton';
+import { SearchToggleButton } from './components/SearchToggleButton';
 import { useGeolocation } from './hooks/useGeolocation';
 import { usePharmacies } from './hooks/usePharmacies';
 import { useReverseMunicipality } from './hooks/useReverseMunicipality';
@@ -37,6 +38,7 @@ function App() {
   const [viewMode, setViewMode] = useState<ViewMode>(urlInit.viewMode);
   const [radius, setRadius] = useState(urlInit.radius);
   const [queryInput, setQueryInput] = useState(urlInit.searchParams.query ?? '');
+  const [searchOpen, setSearchOpen] = useState(Boolean(urlInit.searchParams.query));
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [filtersPinned, setFiltersPinned] = useState(false);
@@ -113,21 +115,30 @@ function App() {
     if (!preferredCity || autoCityClearedRef.current) {
       return;
     }
-    const isAutoQuery = !queryInput || queryInput === autoCityRef.current;
-    if (queryInput && !isAutoQuery) {
+    if (queryInput.trim()) {
       return;
     }
-    if (autoCityRef.current === preferredCity && searchParams.query === preferredCity) {
+    if (
+      searchParams.municipality &&
+      searchParams.municipality !== autoCityRef.current &&
+      searchParams.municipality !== preferredCity
+    ) {
+      return;
+    }
+    if (autoCityRef.current === preferredCity && searchParams.municipality === preferredCity) {
       return;
     }
     autoCityRef.current = preferredCity;
-    setQueryInput(preferredCity);
-    setSearchParams({ query: preferredCity });
-  }, [preferredCity, queryInput, searchParams.query, setSearchParams]);
+    setSearchParams({ municipality: preferredCity });
+  }, [preferredCity, queryInput, searchParams.municipality, setSearchParams]);
 
-  const cityQuery = searchParams.query && municipalityCounts[searchParams.query]
-    ? searchParams.query
-    : undefined;
+  const selectedMunicipality = searchParams.municipality
+    ? searchParams.municipality
+    : (searchParams.municipality === undefined && !queryInput.trim()
+      ? preferredCity ?? undefined
+      : undefined);
+  const waitingForCity = Boolean(userLocation && !inferredMunicipalityState.ready);
+  const listLoading = loading || waitingForCity;
   const locationLabel = preferredCity
     ? shortMunicipalityLabel(preferredCity, preferredCity)
     : inferredPrefecture;
@@ -142,6 +153,7 @@ function App() {
   const nextRadius = RADIUS_OPTIONS.find((option) => option > radius);
   const hasActiveFilters = Boolean(
     searchParams.query ||
+    searchParams.municipality ||
     searchParams.prefecture ||
     searchParams.afterHoursOnly ||
     searchParams.noAdvanceCallRequired ||
@@ -149,6 +161,7 @@ function App() {
     searchParams.hasPrivateSpace ||
     searchParams.openNowOnly
   );
+  const showSearchBar = !userLocation || searchOpen;
 
   const handlePrefectureChange = useCallback((prefecture: string) => {
     userFilterRef.current = true;
@@ -166,40 +179,37 @@ function App() {
   const handleClearLocation = useCallback(() => {
     clearLocationBase();
     const clearAutoPref = autoPrefRef.current && searchParams.prefecture === autoPrefRef.current;
-    const clearAutoCity = autoCityRef.current && queryInput === autoCityRef.current;
+    const clearAutoCity = autoCityRef.current && searchParams.municipality === autoCityRef.current;
     autoPrefRef.current = null;
     autoPrefClearedRef.current = false;
     autoCityRef.current = null;
     autoCityClearedRef.current = false;
-    if (clearAutoCity) {
-      setQueryInput('');
-    }
     setSearchParams({
       radius: undefined,
       prefecture: clearAutoPref ? undefined : searchParams.prefecture,
       prefectureIsHint: false,
-      query: clearAutoCity ? undefined : searchParams.query,
+      municipality: clearAutoCity ? undefined : searchParams.municipality,
     });
     setRadius(DEFAULT_RADIUS);
-  }, [clearLocationBase, setSearchParams, searchParams.prefecture, searchParams.query, queryInput]);
+  }, [clearLocationBase, setSearchParams, searchParams.prefecture, searchParams.municipality]);
 
   const handleGetCurrentLocation = useCallback(() => {
     autoPrefClearedRef.current = false;
     autoCityClearedRef.current = false;
-    const clearAutoCity = autoCityRef.current && queryInput === autoCityRef.current;
     autoCityRef.current = null;
-    if (clearAutoCity) {
-      setQueryInput('');
-    }
     getCurrentLocation();
-    setSearchParams({ radius, query: clearAutoCity ? undefined : searchParams.query });
-  }, [getCurrentLocation, setSearchParams, radius, queryInput, searchParams.query]);
+    setSearchParams({
+      radius,
+      municipality: undefined,
+    });
+  }, [getCurrentLocation, setSearchParams, radius]);
 
   const handleResetFilters = useCallback(() => {
     setQueryInput('');
     autoCityClearedRef.current = true;
     setSearchParams({
       query: undefined,
+      municipality: '',
       prefecture: undefined,
       afterHoursOnly: false,
       noAdvanceCallRequired: false,
@@ -210,6 +220,12 @@ function App() {
     });
     setWasAutoEnabled(false);
     setHoursTouched(true);
+  }, [setSearchParams]);
+
+  const handleClearMunicipality = useCallback(() => {
+    autoCityClearedRef.current = true;
+    userFilterRef.current = true;
+    setSearchParams({ municipality: '' });
   }, [setSearchParams]);
 
   const handleFilterChange: typeof setSearchParams = useCallback((params) => {
@@ -224,19 +240,18 @@ function App() {
   }, [setSearchParams, wasAutoEnabled]);
 
   const handleMunicipalitySelect = useCallback((city: string) => {
-    const next = queryInput === city ? '' : city;
-    if (!next && city === autoCityRef.current) {
+    const next = selectedMunicipality === city ? '' : city;
+    if (!next) {
       autoCityClearedRef.current = true;
     }
-    setQueryInput(next);
-    setSearchParams({ query: next || undefined });
+    setSearchParams({ municipality: next });
     userFilterRef.current = true;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     resultAreaRef.current?.scrollIntoView({
       behavior: reduceMotion ? 'auto' : 'smooth',
       block: 'start',
     });
-  }, [queryInput, setSearchParams]);
+  }, [selectedMunicipality, setSearchParams]);
 
   const handleShowInferredPrefecture = useCallback(() => {
     if (!inferredPrefecture) {
@@ -296,6 +311,7 @@ function App() {
     searchParams.hasPrivateSpace,
     searchParams.openNowOnly,
     searchParams.radius,
+    searchParams.municipality,
   ]);
 
   useEffect(() => {
@@ -354,7 +370,7 @@ function App() {
         >
             <div className="bg-white rounded-xl shadow-sm p-2 md:p-3">
               {userLocation && (
-                <div className="flex flex-wrap items-center gap-2 mb-1.5 text-xs text-gray-500">
+                <div className={`flex flex-wrap items-center gap-1.5 text-xs text-gray-500 ${showSearchBar || extrasOpen ? 'mb-1.5' : ''} md:mb-1.5`}>
                   <span className="shrink-0">
                     現在地{locationLabel ? `（${locationLabel}）` : ''}
                   </span>
@@ -387,19 +403,33 @@ function App() {
                       </button>
                     ))}
                   </div>
-                </div>
-              )}
-              <div className="flex gap-2 md:grid md:grid-cols-3 md:gap-3 items-center">
-                <div className="min-w-0 flex-1 md:col-span-2">
-                  <SearchBar value={queryInput} onChange={setQueryInput} />
-                </div>
-                {userLocation && (
+                  <div className="flex shrink-0 items-center">
+                  <SearchToggleButton
+                    open={searchOpen}
+                    active={Boolean(queryInput)}
+                    onClick={() => setSearchOpen((current) => !current)}
+                  />
                   <FilterToggleButton
                     open={extrasOpen}
                     count={extraFilterCount}
                     onClick={() => setFiltersPinned((current) => !current)}
                   />
-                )}
+                  </div>
+                </div>
+              )}
+              <div className={`gap-2 md:grid md:grid-cols-3 md:gap-3 items-center ${showSearchBar ? 'flex' : 'hidden md:flex'}`}>
+                <div className="min-w-0 flex-1 md:col-span-2">
+                  <SearchBar
+                    value={queryInput}
+                    onChange={(value) => {
+                      setQueryInput(value);
+                      if (value) {
+                        setSearchOpen(true);
+                      }
+                    }}
+                    autoFocus={Boolean(userLocation && searchOpen)}
+                  />
+                </div>
                 <div className={`w-[9.25rem] shrink-0 md:w-auto ${userLocation ? 'hidden md:block' : ''}`}>
                   <PrefectureFilter
                     value={searchParams.prefecture || ''}
@@ -465,12 +495,21 @@ function App() {
           className="min-w-0 flex-1 text-sm text-gray-600 transition-opacity duration-200 scroll-mt-32 md:scroll-mt-44"
           aria-live="polite"
         >
-          {loading ? (
+          {listLoading ? (
             <span className="text-gray-400">お近くの薬局を探しています...</span>
-          ) : cityQuery ? (
+          ) : selectedMunicipality ? (
             <span>
-              <strong className="text-gray-900">{shortMunicipalityLabel(cityQuery, preferredCity || cityQuery)}</strong>
+              <strong className="text-gray-900">{shortMunicipalityLabel(selectedMunicipality, preferredCity || selectedMunicipality)}</strong>
               {' '}<strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong>件
+              {(searchParams.prefecture || locationSearch.prefecture) && (
+                <button
+                  type="button"
+                  onClick={handleClearMunicipality}
+                  className="ml-1.5 text-[#4AA8D9] hover:underline"
+                >
+                  {searchParams.prefecture || locationSearch.prefecture}も見る
+                </button>
+              )}
             </span>
           ) : userLocation && searchParams.radius && locationSearch.fallback === 'prefecture' && locationSearch.prefecture ? (
             <span>
@@ -572,7 +611,7 @@ function App() {
           && (!userLocation || inferredMunicipalityState.ready) && (
           <MunicipalityChips
             counts={municipalityCounts}
-            selected={queryInput}
+            selected={selectedMunicipality}
             preferred={preferredCity}
             onSelect={handleMunicipalitySelect}
           />
@@ -582,13 +621,14 @@ function App() {
         {viewMode === 'list' ? (
           <PharmacyList
             pharmacies={pharmacies}
-            loading={loading}
+            loading={listLoading}
             error={error}
             onResetFilters={handleResetFilters}
             onRetry={refetch}
             onSelectPharmacy={setSelectedPharmacy}
             groupByMunicipality={
-              !searchParams.query && (
+              !searchParams.query &&
+              !searchParams.municipality && (
                 locationSearch.fallback === 'prefecture'
                 || (!userLocation && !!searchParams.prefecture)
               )

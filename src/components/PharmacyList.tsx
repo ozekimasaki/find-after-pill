@@ -164,7 +164,7 @@ export function PharmacyList({
 
   return (
     <>
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         {displayedPharmacies.map((pharmacy, index) => {
           const city = groupByMunicipality
             ? (extractMunicipality(pharmacy.address, pharmacy.prefecture) ?? 'その他')
