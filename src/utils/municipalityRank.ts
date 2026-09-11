@@ -11,12 +11,12 @@ export function shortMunicipalityLabel(name: string, context?: string | null): s
   }
 
   const parent = parentCityName(name);
-  const contextParent = parentCityName(context);
-  if (parent && contextParent && parent === contextParent) {
-    return name.slice(parent.length) || name;
+  if (!parent) {
+    return name;
   }
 
-  return name;
+  const rest = name.slice(parent.length);
+  return rest || name;
 }
 
 function proximityRank(preferred: string, name: string): number {

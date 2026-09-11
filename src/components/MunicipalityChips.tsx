@@ -8,7 +8,7 @@ interface MunicipalityChipsProps {
   onSelect: (municipality: string) => void;
 }
 
-const PREVIEW_COUNT = 4;
+const PREVIEW_COUNT = 3;
 
 function pickPreview(
   cities: Array<[string, number]>,
