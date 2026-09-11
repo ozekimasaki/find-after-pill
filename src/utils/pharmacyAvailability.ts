@@ -48,7 +48,7 @@ function normalizeBusinessHours(hours: string): string {
     .replace(/([月火水木金土日祝・,／/]+)[／/](?=(?:午前|午後|\d))/g, '$1:')
     .replace(/(\d{1,2}:\d{2})から(?=\d{1,2}:\d{2})/g, '$1-')
     .replace(/[‐‑‒–—―ー−~〜～∼]/g, '-')
-    .replace(/[：]/g, ':')
+    .replace(/[：ː]/g, ':')
     .replace(/((?:\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2})(?:\s*[\/,]\s*\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2})*)\(([^()]*[月火水木金土日祝][^()]*)\)/g, '$2:$1')
     .replace(/[､、，；;｡。]/g, ',')
     .replace(/[（(]/g, ',')
@@ -262,6 +262,12 @@ function formatClock(hour: string, minute?: string): string {
   return `${Number(hour)}:${(minute ?? '00').padStart(2, '0')}`;
 }
 
+function isPlausibleClock(hour: string, minute?: string): boolean {
+  const h = Number(hour);
+  const m = Number(minute ?? '0');
+  return h >= 0 && h <= 24 && m >= 0 && m <= 59;
+}
+
 /**
  * カード向けに、きょう該当する開局時間だけを短く表示する。
  */
@@ -270,13 +276,18 @@ export function formatTodayHours(businessHours?: string | null, now: Date = new 
     return '';
   }
 
-  const raw = businessHours.normalize('NFKC').replace(/\s+/g, '');
-  const normalized = normalizeBusinessHours(businessHours);
+  const cleaned = businessHours
+    .normalize('NFKC')
+    .replace(/[ː]/g, ':')
+    .replace(/[（(][^)）]*\d{1,2}\/\d{1,2}[^)）]*[)）]/g, ',');
+
+  const raw = cleaned.replace(/\s+/g, '');
+  const normalized = normalizeBusinessHours(cleaned);
   if (!normalized) {
     return raw.length > 20 ? `${raw.slice(0, 20)}…` : raw;
   }
 
-  if (ALWAYS_OPEN_PATTERN.test(normalized) || /24時間/.test(normalized)) {
+  if (/24時間/.test(normalized) && !/\d{1,2}:\d{2}\s*-\s*\d{1,2}/.test(normalized)) {
     return '24時間';
   }
 
@@ -294,6 +305,12 @@ export function formatTodayHours(businessHours?: string | null, now: Date = new 
     }
     cursor = index + match[0].length;
 
+    const startHour = match[1] ?? '0';
+    const endHour = match[3] ?? '0';
+    if (!isPlausibleClock(startHour, match[2]) || !isPlausibleClock(endHour, match[4])) {
+      continue;
+    }
+
     const days = expandDaysFromContext(currentContext);
     if (days && !days.has(dayIndex)) {
       continue;
@@ -304,7 +321,7 @@ export function formatTodayHours(businessHours?: string | null, now: Date = new 
       continue;
     }
 
-    ranges.push(`${formatClock(match[1] ?? '0', match[2])}-${formatClock(match[3] ?? '0', match[4])}`);
+    ranges.push(`${formatClock(startHour, match[2])}-${formatClock(endHour, match[4])}`);
   }
 
   const unique = [...new Set(ranges)];
@@ -318,5 +335,8 @@ export function formatTodayHours(businessHours?: string | null, now: Date = new 
   }
 
   const first = raw.split(/[､、,／/]/)[0] ?? raw;
+  if (/年中無休|定休日なし/.test(first) && first.length > 16) {
+    return first.replace(/年中無休/, '').slice(0, 16);
+  }
   return first.length > 20 ? `${first.slice(0, 20)}…` : first;
 }
