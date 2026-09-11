@@ -51,6 +51,8 @@ function App() {
   const userFilterRef = useRef(false);
   const autoPrefRef = useRef<string | null>(null);
   const autoPrefClearedRef = useRef(false);
+  const autoCityRef = useRef<string | null>(null);
+  const autoCityClearedRef = useRef(false);
 
   const {
     location: userLocation,
@@ -106,6 +108,23 @@ function App() {
   const preferredCity = inferredMunicipality
     ? matchKnownMunicipality(inferredMunicipality, municipalityCounts)
     : null;
+
+  useEffect(() => {
+    if (!preferredCity || autoCityClearedRef.current) {
+      return;
+    }
+    const isAutoQuery = !queryInput || queryInput === autoCityRef.current;
+    if (queryInput && !isAutoQuery) {
+      return;
+    }
+    if (autoCityRef.current === preferredCity && searchParams.query === preferredCity) {
+      return;
+    }
+    autoCityRef.current = preferredCity;
+    setQueryInput(preferredCity);
+    setSearchParams({ query: preferredCity });
+  }, [preferredCity, queryInput, searchParams.query, setSearchParams]);
+
   const cityQuery = searchParams.query && municipalityCounts[searchParams.query]
     ? searchParams.query
     : undefined;
@@ -147,24 +166,38 @@ function App() {
   const handleClearLocation = useCallback(() => {
     clearLocationBase();
     const clearAutoPref = autoPrefRef.current && searchParams.prefecture === autoPrefRef.current;
+    const clearAutoCity = autoCityRef.current && queryInput === autoCityRef.current;
     autoPrefRef.current = null;
     autoPrefClearedRef.current = false;
+    autoCityRef.current = null;
+    autoCityClearedRef.current = false;
+    if (clearAutoCity) {
+      setQueryInput('');
+    }
     setSearchParams({
       radius: undefined,
       prefecture: clearAutoPref ? undefined : searchParams.prefecture,
       prefectureIsHint: false,
+      query: clearAutoCity ? undefined : searchParams.query,
     });
     setRadius(DEFAULT_RADIUS);
-  }, [clearLocationBase, setSearchParams, searchParams.prefecture]);
+  }, [clearLocationBase, setSearchParams, searchParams.prefecture, searchParams.query, queryInput]);
 
   const handleGetCurrentLocation = useCallback(() => {
     autoPrefClearedRef.current = false;
+    autoCityClearedRef.current = false;
+    const clearAutoCity = autoCityRef.current && queryInput === autoCityRef.current;
+    autoCityRef.current = null;
+    if (clearAutoCity) {
+      setQueryInput('');
+    }
     getCurrentLocation();
-    setSearchParams({ radius });
-  }, [getCurrentLocation, setSearchParams, radius]);
+    setSearchParams({ radius, query: clearAutoCity ? undefined : searchParams.query });
+  }, [getCurrentLocation, setSearchParams, radius, queryInput, searchParams.query]);
 
   const handleResetFilters = useCallback(() => {
     setQueryInput('');
+    autoCityClearedRef.current = true;
     setSearchParams({
       query: undefined,
       prefecture: undefined,
@@ -192,8 +225,12 @@ function App() {
 
   const handleMunicipalitySelect = useCallback((city: string) => {
     const next = queryInput === city ? '' : city;
+    if (!next && city === autoCityRef.current) {
+      autoCityClearedRef.current = true;
+    }
     setQueryInput(next);
     setSearchParams({ query: next || undefined });
+    userFilterRef.current = true;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     resultAreaRef.current?.scrollIntoView({
       behavior: reduceMotion ? 'auto' : 'smooth',
@@ -432,7 +469,7 @@ function App() {
             <span className="text-gray-400">お近くの薬局を探しています...</span>
           ) : cityQuery ? (
             <span>
-              <strong className="text-gray-900">{cityQuery}</strong>
+              <strong className="text-gray-900">{shortMunicipalityLabel(cityQuery, preferredCity || cityQuery)}</strong>
               {' '}<strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong>件
             </span>
           ) : userLocation && searchParams.radius && locationSearch.fallback === 'prefecture' && locationSearch.prefecture ? (

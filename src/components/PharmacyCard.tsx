@@ -25,7 +25,7 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
 
   return (
     <article
-      className="bg-white rounded-lg shadow-sm border border-gray-200 p-3.5 hover:shadow-md transition-shadow cursor-pointer focus-within:ring-2 focus-within:ring-[#65BBE9]"
+      className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 hover:shadow-md transition-shadow cursor-pointer focus-within:ring-2 focus-within:ring-[#65BBE9]"
       onClick={onClick}
     >
       <div className="flex justify-between items-start gap-2">
@@ -108,15 +108,7 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-            女性薬剤師 {pharmacy.pharmacistFemale}名
-          </span>
-        )}
-        {pharmacy.privacyMeasures && pharmacy.privacyMeasures !== 'なし' && pharmacy.privacyMeasures !== '無' && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-green-50 text-green-700 rounded">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-            プライバシー配慮
+            女性薬剤師
           </span>
         )}
       </div>
