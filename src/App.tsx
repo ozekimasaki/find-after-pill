@@ -370,8 +370,8 @@ function App() {
         >
             <div className="bg-white rounded-xl shadow-sm p-2 md:p-3">
               {userLocation && (
-                <div className={`flex flex-wrap items-center gap-1.5 text-xs text-gray-500 ${showSearchBar || extrasOpen ? 'mb-1.5' : ''} md:mb-1.5`}>
-                  <span className="shrink-0">
+                <div className={`flex items-center gap-1 text-xs text-gray-500 ${showSearchBar || extrasOpen ? 'mb-1.5' : ''} md:mb-1.5`}>
+                  <span className="min-w-0 truncate">
                     現在地{locationLabel ? `（${locationLabel}）` : ''}
                   </span>
                   <button
@@ -382,7 +382,7 @@ function App() {
                     解除
                   </button>
                   <div
-                    className={`ml-auto min-w-0 gap-0.5 ${extrasOpen ? 'hidden' : 'flex'} md:hidden`}
+                    className={`ml-auto shrink-0 gap-0.5 ${extrasOpen ? 'hidden' : 'flex'} md:hidden`}
                     role="group"
                     aria-label="検索半径"
                   >
@@ -403,7 +403,7 @@ function App() {
                       </button>
                     ))}
                   </div>
-                  <div className="flex shrink-0 items-center">
+                  <div className="flex shrink-0 items-center -mr-1">
                   <SearchToggleButton
                     open={searchOpen}
                     active={Boolean(queryInput)}

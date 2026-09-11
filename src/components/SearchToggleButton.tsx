@@ -9,7 +9,7 @@ export function SearchToggleButton({ open, active = false, onClick }: SearchTogg
     <button
       type="button"
       onClick={onClick}
-      className={`relative md:hidden shrink-0 inline-flex items-center justify-center w-10 h-10 text-[#4AA8D9] rounded-lg hover:bg-[#EBF6FC] ${
+      className={`relative md:hidden shrink-0 inline-flex items-center justify-center w-8 h-8 text-[#4AA8D9] rounded-lg hover:bg-[#EBF6FC] ${
         open ? 'bg-[#EBF6FC]' : ''
       }`}
       aria-expanded={open}
