@@ -162,6 +162,11 @@ function App() {
     searchParams.openNowOnly
   );
   const showSearchBar = !userLocation || searchOpen;
+  const showStickyRadius = Boolean(
+    userLocation &&
+    locationSearch.fallback !== 'prefecture' &&
+    locationSearch.nearbyCount > 0
+  );
 
   const handlePrefectureChange = useCallback((prefecture: string) => {
     userFilterRef.current = true;
@@ -382,7 +387,7 @@ function App() {
                     解除
                   </button>
                   <div
-                    className={`ml-auto shrink-0 gap-0.5 ${extrasOpen ? 'hidden' : 'flex'} md:hidden`}
+                    className={`ml-auto shrink-0 gap-0.5 ${extrasOpen || !showStickyRadius ? 'hidden' : 'flex'} md:hidden`}
                     role="group"
                     aria-label="検索半径"
                   >
@@ -403,7 +408,7 @@ function App() {
                       </button>
                     ))}
                   </div>
-                  <div className="flex shrink-0 items-center -mr-1">
+                  <div className={`flex shrink-0 items-center -mr-1 ${showStickyRadius && !extrasOpen ? '' : 'ml-auto'}`}>
                   <SearchToggleButton
                     open={searchOpen}
                     active={Boolean(queryInput)}
