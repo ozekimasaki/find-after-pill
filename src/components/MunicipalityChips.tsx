@@ -35,13 +35,7 @@ export function MunicipalityChips({
   return (
     <div className="mb-2">
       <p className="sr-only">市区町村で絞り込む</p>
-      <div
-        className={
-          expanded
-            ? 'flex flex-wrap gap-1.5'
-            : 'flex flex-nowrap gap-1.5 overflow-x-auto overscroll-x-contain filter-chip-scroll'
-        }
-      >
+      <div className="flex flex-wrap gap-1.5">
         {visible.map(([name, count]) => {
           const isActive = selected === name;
           const isPreferred = preferred === name;
@@ -72,7 +66,7 @@ export function MunicipalityChips({
           <button
             type="button"
             onClick={() => setExpanded((current) => !current)}
-            className="inline-flex items-center px-2 py-0.5 text-sm text-[#4AA8D9] rounded-full border border-transparent hover:bg-[#EBF6FC] shrink-0"
+            className="inline-flex items-center px-2 py-0.5 text-sm text-[#4AA8D9] rounded-full border border-transparent hover:bg-[#EBF6FC]"
           >
             {expanded ? 'とじる' : `ほか${cities.length - PREVIEW_COUNT}の市区`}
           </button>
