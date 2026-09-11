@@ -69,7 +69,7 @@ function MapUpdater({ center, zoom }: { center: [number, number]; zoom: number }
   return null;
 }
 
-const MAP_MARKER_LIMIT = 400;
+const MAP_MARKER_LIMIT = 1500;
 
 // クラスタリングされたマーカーレイヤー
 function MarkerLayer({
@@ -144,7 +144,11 @@ function escapeHtml(str: string): string {
 export function Map({ pharmacies, userLocation, onSelectPharmacy }: MapProps) {
   // 座標のある薬局のみ
   const mappablePharmacies = pharmacies.filter(p => p.lat !== null && p.lng !== null);
-  const limitedPharmacies = mappablePharmacies.slice(0, MAP_MARKER_LIMIT);
+  const limitedPharmacies = userLocation
+    ? mappablePharmacies.slice(0, MAP_MARKER_LIMIT)
+    : mappablePharmacies.length > MAP_MARKER_LIMIT
+      ? mappablePharmacies.slice(0, MAP_MARKER_LIMIT)
+      : mappablePharmacies;
   const hiddenCount = mappablePharmacies.length - limitedPharmacies.length;
 
   // 地図の中心を決定
