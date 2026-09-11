@@ -22,5 +22,5 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["worker/**/*", "src/types/**/*"]
+    "include": ["worker/**/*", "src/types/**/*", "src/utils/pharmacyIdentity.ts"]
 }

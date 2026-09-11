@@ -93,7 +93,7 @@ function App() {
       return;
     }
     autoPrefRef.current = inferredPrefecture;
-    setSearchParams({ prefecture: inferredPrefecture });
+    setSearchParams({ prefecture: inferredPrefecture, prefectureIsHint: true });
   }, [userLocation, inferredPrefecture, searchParams.prefecture, setSearchParams]);
 
   const extraFilterCount = [
@@ -103,7 +103,7 @@ function App() {
     searchParams.femalePharmacistOnly,
     searchParams.hasPrivateSpace,
   ].filter(Boolean).length;
-  const extrasOpen = !scrolled || filtersPinned;
+  const extrasOpen = filtersPinned || (!scrolled && !userLocation);
   const nextRadius = RADIUS_OPTIONS.find((option) => option > radius);
   const hasActiveFilters = Boolean(
     searchParams.query ||
@@ -119,7 +119,7 @@ function App() {
     userFilterRef.current = true;
     autoPrefRef.current = null;
     autoPrefClearedRef.current = !prefecture;
-    setSearchParams({ prefecture: prefecture || undefined });
+    setSearchParams({ prefecture: prefecture || undefined, prefectureIsHint: false });
   }, [setSearchParams]);
 
   const handleRadiusChange = useCallback((r: number) => {
@@ -136,6 +136,7 @@ function App() {
     setSearchParams({
       radius: undefined,
       prefecture: clearAutoPref ? undefined : searchParams.prefecture,
+      prefectureIsHint: false,
     });
     setRadius(DEFAULT_RADIUS);
   }, [clearLocationBase, setSearchParams, searchParams.prefecture]);
@@ -156,6 +157,7 @@ function App() {
       femalePharmacistOnly: false,
       hasPrivateSpace: false,
       openNowOnly: false,
+      prefectureIsHint: false,
     });
     setWasAutoEnabled(false);
     setHoursTouched(true);
@@ -174,6 +176,11 @@ function App() {
 
   const handleMunicipalitySelect = useCallback((city: string) => {
     setQueryInput((current) => (current === city ? '' : city));
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    resultAreaRef.current?.scrollIntoView({
+      behavior: reduceMotion ? 'auto' : 'smooth',
+      block: 'start',
+    });
   }, []);
 
   const handleShowInferredPrefecture = useCallback(() => {
@@ -183,6 +190,7 @@ function App() {
     setSearchParams({
       prefecture: inferredPrefecture,
       radius: undefined,
+      prefectureIsHint: false,
     });
   }, [inferredPrefecture, setSearchParams]);
 
@@ -289,36 +297,39 @@ function App() {
         >
             <div className="bg-white rounded-xl shadow-sm p-2.5 md:p-3">
               {userLocation && (
-                <div className="flex items-center gap-2 mb-2 text-xs text-gray-500">
-                  <span>
-                    現在地で検索中
-                    {inferredPrefecture ? `（${inferredPrefecture}）` : ''}
+                <div className="flex flex-wrap items-center gap-2 mb-2 text-xs text-gray-500">
+                  <span className="shrink-0">
+                    現在地{inferredPrefecture ? `（${inferredPrefecture}）` : ''}
                   </span>
                   <button
                     type="button"
                     onClick={handleClearLocation}
-                    className="text-[#4AA8D9] hover:underline"
+                    className="text-[#4AA8D9] hover:underline shrink-0"
                   >
                     解除
                   </button>
-                  {!extrasOpen && (
-                    <div className="ml-auto flex gap-1 md:hidden">
+                  <div
+                    className={`ml-auto min-w-0 gap-0.5 ${extrasOpen ? 'hidden' : 'flex'} md:hidden`}
+                    role="group"
+                    aria-label="検索半径"
+                  >
+                    {RADIUS_OPTIONS.map((r) => (
                       <button
+                        key={r}
                         type="button"
-                        onClick={() => setFiltersPinned(true)}
-                        className="px-2 py-0.5 rounded bg-gray-100 text-gray-700"
+                        onClick={() => handleRadiusChange(r)}
+                        aria-pressed={searchParams.radius === r}
+                        aria-label={`${r}km`}
+                        className={`px-1.5 py-0.5 rounded font-medium ${
+                          searchParams.radius === r
+                            ? 'bg-[#65BBE9] text-white'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
                       >
-                        {searchParams.radius ?? radius}km
+                        {r}km
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setFiltersPinned(true)}
-                        className="px-2 py-0.5 rounded bg-gray-100 text-gray-700"
-                      >
-                        絞り込み{extraFilterCount > 0 ? ` ${extraFilterCount}` : ''}
-                      </button>
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </div>
               )}
               <div className="flex gap-2 md:grid md:grid-cols-3 md:gap-3">
@@ -333,8 +344,8 @@ function App() {
                   />
                 </div>
               </div>
-              {!userLocation && !extrasOpen && (
-                <div className="mt-2 md:hidden">
+              {!extrasOpen && (
+                <div className="mt-1.5 md:hidden">
                   <button
                     type="button"
                     onClick={() => setFiltersPinned(true)}
@@ -387,7 +398,7 @@ function App() {
         <div
           id="results"
           ref={resultAreaRef}
-          className="text-sm text-gray-600 mb-4 px-1 transition-opacity duration-200 scroll-mt-28 md:scroll-mt-36"
+          className="text-sm text-gray-600 mb-4 px-1 transition-opacity duration-200 scroll-mt-24 md:scroll-mt-40"
           aria-live="polite"
         >
           {loading ? (
@@ -407,7 +418,10 @@ function App() {
             </span>
           ) : userLocation && searchParams.radius ? (
             <span>
-              {searchParams.radius}km以内に <strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong> 件の薬局があります
+              {searchParams.radius}km以内に <strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong> 件
+              {locationSearch.nearbyPrefectures.length > 1
+                ? `（${locationSearch.nearbyPrefectures.join('・')}）`
+                : 'の薬局があります'}
             </span>
           ) : searchParams.prefecture ? (
             <span>

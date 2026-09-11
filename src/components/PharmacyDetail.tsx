@@ -241,7 +241,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
                   </svg>
                 }
                 label="開局時間"
-                value={pharmacy.businessHours}
+                value={pharmacy.businessHours.normalize('NFKC')}
               />
             )}
 

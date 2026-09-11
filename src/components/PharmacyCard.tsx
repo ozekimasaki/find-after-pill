@@ -1,25 +1,12 @@
 import type { PharmacyWithDistance } from '../types/pharmacy';
 import { formatDistance } from '../utils/distance';
-import { hasAfterHoursSupport, isLikelyOpenNow } from '../utils/pharmacyAvailability';
+import { formatTodayHours, hasAfterHoursSupport, isLikelyOpenNow } from '../utils/pharmacyAvailability';
 import { toTelHref, formatPhoneDisplay } from '../utils/phone';
 
 interface PharmacyCardProps {
   pharmacy: PharmacyWithDistance;
   onClick?: () => void;
   hasUserLocation?: boolean;
-}
-
-function formatShortHours(hours: string): string {
-  const normalized = hours.normalize('NFKC').replace(/\s+/g, '');
-  const parts = normalized.split(/[､、,／/]/);
-  const first = parts[0] ?? hours;
-  if (parts.length > 1) {
-    return `${first} 他`;
-  }
-  if (first.length > 22) {
-    return `${first.slice(0, 22)}…`;
-  }
-  return first;
 }
 
 export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: PharmacyCardProps) {
@@ -39,7 +26,7 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
       onClick={onClick}
     >
       <div className="flex justify-between items-start gap-2">
-        <h3 className="font-bold text-gray-900 text-lg leading-tight">{pharmacy.name}</h3>
+        <h3 className="font-bold text-gray-900 text-lg leading-tight scroll-mt-24 md:scroll-mt-40">{pharmacy.name}</h3>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
           {likelyOpen && (
             <span className="px-2 py-1 bg-[#EBF6FC] text-[#4AA8D9] text-xs font-medium rounded">
@@ -76,7 +63,7 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            {formatShortHours(pharmacy.businessHours)}
+            {formatTodayHours(pharmacy.businessHours)}
           </span>
         )}
         {hasAfterHoursSupport(pharmacy.afterHoursService) && (

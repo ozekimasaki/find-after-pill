@@ -86,6 +86,11 @@ export interface SearchParams {
   hasPrivateSpace?: boolean;
   /** いま開局中の目安のみ */
   openNowOnly?: boolean;
+  /**
+   * 現在地から推測した都道府県。
+   * true のときは近傍検索で他県の薬局も残す。
+   */
+  prefectureIsHint?: boolean;
 }
 
 /**

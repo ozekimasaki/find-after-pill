@@ -70,7 +70,13 @@ body {
 }
 
 html {
-  scroll-padding-top: 7.5rem;
+  scroll-padding-top: 5.5rem;
+}
+
+@media (min-width: 768px) {
+  html {
+    scroll-padding-top: 9rem;
+  }
 }
 
 /* Leaflet marker icon fix */

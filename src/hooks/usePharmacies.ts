@@ -21,6 +21,7 @@ export interface LocationSearchInfo {
   nearbyCount: number;
   fallback: LocationFallback;
   prefecture: string | null;
+  nearbyPrefectures: string[];
 }
 
 interface UsePharmaciesReturn {
@@ -93,9 +94,12 @@ export function usePharmacies(
   // フィルタリング・ソート済みの薬局リスト
   const { pharmacies, locationSearch } = useMemo(() => {
     let filtered = [...allPharmacies];
+    const skipPrefectureFilter = Boolean(
+      userLocation && searchParams.radius && searchParams.prefectureIsHint
+    );
 
-    // 都道府県フィルター
-    if (searchParams.prefecture) {
+    // 現在地の近傍検索中は、推測した都道府県で他県を落とさない
+    if (searchParams.prefecture && !skipPrefectureFilter) {
       filtered = filtered.filter(p => p.prefecture === searchParams.prefecture);
     }
 
@@ -155,12 +159,15 @@ export function usePharmacies(
     let result = withDistance;
     let nearbyCount = 0;
     let fallback: LocationFallback = 'none';
+    let nearbyPrefectures: string[] = [];
 
     if (userLocation && searchParams.radius) {
       const nearby = withDistance.filter(p =>
         p.distance !== undefined && p.distance <= searchParams.radius!
       );
       nearbyCount = nearby.length;
+      nearbyPrefectures = [...new Set(nearby.map((pharmacy) => pharmacy.prefecture))]
+        .sort((a, b) => prefectureSortIndex(a) - prefectureSortIndex(b));
 
       if (nearby.length === 0 && fallbackPrefecture) {
         result = withDistance.filter(p => p.prefecture === fallbackPrefecture);
@@ -223,6 +230,7 @@ export function usePharmacies(
         nearbyCount,
         fallback,
         prefecture: fallbackPrefecture,
+        nearbyPrefectures,
       },
     };
   }, [allPharmacies, searchParams, userLocation]);

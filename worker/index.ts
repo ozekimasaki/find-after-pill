@@ -1,5 +1,6 @@
 import { Env, KV_KEYS } from './types';
 import type { Pharmacy, PharmacyMeta } from '../src/types/pharmacy';
+import { dedupePharmacies } from '../src/utils/pharmacyIdentity';
 
 /**
  * 距離計算（Haversine formula）
@@ -98,8 +99,11 @@ async function handleApiRequest(request: Request, env: Env): Promise<Response> {
         return jsonResponse({ pharmacies: [], meta: null });
       }
 
-      let pharmacies: Pharmacy[] = JSON.parse(pharmaciesJson);
-      const meta: PharmacyMeta | null = metaJson ? JSON.parse(metaJson) : null;
+      let pharmacies: Pharmacy[] = dedupePharmacies(JSON.parse(pharmaciesJson));
+      const parsedMeta: PharmacyMeta | null = metaJson ? JSON.parse(metaJson) : null;
+      const meta: PharmacyMeta | null = parsedMeta
+        ? { ...parsedMeta, totalCount: pharmacies.length }
+        : null;
 
       // フィルタリング
       const prefecture = url.searchParams.get('prefecture');
@@ -165,7 +169,7 @@ async function handleApiRequest(request: Request, env: Env): Promise<Response> {
         return jsonResponse({ prefectures: {} });
       }
 
-      const pharmacies: Pharmacy[] = JSON.parse(pharmaciesJson);
+      const pharmacies: Pharmacy[] = dedupePharmacies(JSON.parse(pharmaciesJson));
       const prefectureCounts: Record<string, number> = {};
 
       for (const p of pharmacies) {
@@ -222,11 +226,11 @@ async function handleRootPage(request: Request, env: Env): Promise<Response> {
     let totalCount = meta?.totalCount || 0;
 
     if (pharmaciesJson) {
-      const pharmacies: Pharmacy[] = JSON.parse(pharmaciesJson);
+      const pharmacies: Pharmacy[] = dedupePharmacies(JSON.parse(pharmaciesJson));
       for (const p of pharmacies) {
         prefectureCounts[p.prefecture] = (prefectureCounts[p.prefecture] || 0) + 1;
       }
-      if (!totalCount) totalCount = pharmacies.length;
+      totalCount = pharmacies.length;
     }
 
     // 最終更新日フォーマット

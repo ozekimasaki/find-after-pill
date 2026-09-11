@@ -257,3 +257,66 @@ export function isLikelyOpenNow(businessHours?: string | null, now: Date = new D
 
   return false;
 }
+
+function formatClock(hour: string, minute?: string): string {
+  return `${Number(hour)}:${(minute ?? '00').padStart(2, '0')}`;
+}
+
+/**
+ * カード向けに、きょう該当する開局時間だけを短く表示する。
+ */
+export function formatTodayHours(businessHours?: string | null, now: Date = new Date()): string {
+  if (!businessHours) {
+    return '';
+  }
+
+  const raw = businessHours.normalize('NFKC').replace(/\s+/g, '');
+  const normalized = normalizeBusinessHours(businessHours);
+  if (!normalized) {
+    return raw.length > 20 ? `${raw.slice(0, 20)}…` : raw;
+  }
+
+  if (ALWAYS_OPEN_PATTERN.test(normalized) || /24時間/.test(normalized)) {
+    return '24時間';
+  }
+
+  const { dayIndex } = getJstDayAndMinutes(now);
+  const ranges: string[] = [];
+  let currentContext = '';
+  let cursor = 0;
+  let sawTodayClosed = false;
+
+  for (const match of normalized.matchAll(TIME_RANGE_PATTERN)) {
+    const index = match.index ?? 0;
+    const between = normalized.slice(cursor, index);
+    if (DAY_CONTEXT_PATTERN.test(between)) {
+      currentContext = between;
+    }
+    cursor = index + match[0].length;
+
+    const days = expandDaysFromContext(currentContext);
+    if (days && !days.has(dayIndex)) {
+      continue;
+    }
+
+    if (isClosedContext(currentContext)) {
+      sawTodayClosed = true;
+      continue;
+    }
+
+    ranges.push(`${formatClock(match[1] ?? '0', match[2])}-${formatClock(match[3] ?? '0', match[4])}`);
+  }
+
+  const unique = [...new Set(ranges)];
+  if (unique.length > 0) {
+    const shown = unique.slice(0, 2).join(' / ');
+    return unique.length > 2 ? `${shown} 他` : shown;
+  }
+
+  if (sawTodayClosed) {
+    return '本日休み';
+  }
+
+  const first = raw.split(/[､、,／/]/)[0] ?? raw;
+  return first.length > 20 ? `${first.slice(0, 20)}…` : first;
+}

@@ -162,7 +162,7 @@ export function PharmacyList({
         {displayedPharmacies.map((pharmacy, index) => (
           <div
             key={pharmacy.id}
-            className="animate-fadeIn scroll-mt-32"
+            className="animate-fadeIn scroll-mt-24 md:scroll-mt-40"
             style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
           >
             <PharmacyCard
