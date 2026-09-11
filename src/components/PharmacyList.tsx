@@ -158,7 +158,7 @@ export function PharmacyList({
 
   return (
     <>
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {displayedPharmacies.map((pharmacy, index) => (
           <div
             key={pharmacy.id}

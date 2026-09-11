@@ -407,31 +407,31 @@ function App() {
             <span className="text-gray-400">お近くの薬局を探しています...</span>
           ) : userLocation && searchParams.radius && locationSearch.fallback === 'prefecture' && locationSearch.prefecture ? (
             <span>
-              <strong className="text-gray-900">{locationSearch.prefecture}</strong>の
-              {' '}<strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong> 件
-              （{searchParams.radius}km以内の地図登録なし）
+              <strong className="text-gray-900">{locationSearch.prefecture}</strong>
+              {' '}<strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong>件
+              <span className="text-gray-400"> · 地図ピンなし</span>
             </span>
           ) : userLocation && searchParams.radius && locationSearch.fallback === 'ungeocoded' ? (
             <span>
-              {searchParams.radius}km以内 <strong className="text-gray-900">{locationSearch.nearbyCount.toLocaleString()}</strong> 件
+              {searchParams.radius}km以内 <strong className="text-gray-900">{locationSearch.nearbyCount.toLocaleString()}</strong>件
               {locationSearch.prefecture
-                ? `（ほか${locationSearch.prefecture}の地図未登録を含む 計 ${pharmacies.length.toLocaleString()} 件）`
+                ? ` · ほか${locationSearch.prefecture}の未登録あり`
                 : ''}
             </span>
           ) : userLocation && searchParams.radius ? (
             <span>
-              {searchParams.radius}km以内に <strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong> 件
+              {searchParams.radius}km以内 <strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong>件
               {locationSearch.nearbyPrefectures.length > 1
                 ? `（${locationSearch.nearbyPrefectures.join('・')}）`
-                : 'の薬局があります'}
+                : ''}
             </span>
           ) : searchParams.prefecture ? (
             <span>
-              {searchParams.prefecture} <strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong> 件の対応薬局
+              {searchParams.prefecture} <strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong>件
             </span>
           ) : (
             <span>
-              全国 <strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong> 件の対応薬局
+              全国 <strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong>件
             </span>
           )}
         </div>
@@ -496,12 +496,7 @@ function App() {
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >
-            <span className="flex items-center justify-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-              </svg>
-              一覧
-            </span>
+            一覧
           </button>
           <button
             type="button"
@@ -514,12 +509,7 @@ function App() {
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >
-            <span className="flex items-center justify-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-              </svg>
-              地図
-            </span>
+            地図
           </button>
         </nav>
 
@@ -551,6 +541,7 @@ function App() {
               pharmacies={pharmacies}
               userLocation={userLocation}
               onSelectPharmacy={setSelectedPharmacy}
+              onShowList={() => setViewMode('list')}
             />
           </div>
         )}

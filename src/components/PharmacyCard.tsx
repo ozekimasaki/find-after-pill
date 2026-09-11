@@ -22,7 +22,7 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
 
   return (
     <article
-      className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer focus-within:ring-2 focus-within:ring-[#65BBE9]"
+      className="bg-white rounded-lg shadow-sm border border-gray-200 p-3.5 hover:shadow-md transition-shadow cursor-pointer focus-within:ring-2 focus-within:ring-[#65BBE9]"
       onClick={onClick}
     >
       <div className="flex justify-between items-start gap-2">
@@ -100,46 +100,35 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
         )}
       </div>
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-2.5 flex items-center gap-3">
         <a
           href={googleMapsUrl}
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
+          className="text-sm text-[#4AA8D9] hover:underline"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
-          ルートを調べる
+          ルート
         </a>
         <button
           type="button"
           onClick={onClick}
-          className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200 transition-colors ml-auto"
+          className="text-sm text-[#4AA8D9] hover:underline"
         >
-          詳細を見る
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
+          詳細
         </button>
       </div>
-
-      {/* 電話ボタン（全幅・独立） */}
       {pharmacy.phone && (
         <a
           href={toTelHref(pharmacy.phone)}
           onClick={(e) => e.stopPropagation()}
-          className="mt-2 flex flex-col items-center justify-center gap-0.5 w-full px-4 py-3 text-white bg-[#65BBE9] rounded-lg hover:bg-[#4AA8D9] transition-colors"
+          className="mt-2 flex items-center justify-center gap-2 w-full px-3 py-2.5 text-white bg-[#65BBE9] rounded-lg hover:bg-[#4AA8D9] transition-colors"
         >
-          <span className="inline-flex items-center gap-2 text-base font-medium">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-            </svg>
-            電話する
-          </span>
-          <span className="text-sm font-normal tracking-wide">{formatPhoneDisplay(pharmacy.phone)}</span>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          </svg>
+          <span className="text-sm font-medium">電話する</span>
+          <span className="text-sm tracking-wide">{formatPhoneDisplay(pharmacy.phone)}</span>
         </a>
       )}
     </article>

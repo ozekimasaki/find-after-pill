@@ -53,6 +53,7 @@ interface MapProps {
   pharmacies: PharmacyWithDistance[];
   userLocation?: GeoLocation | null;
   onSelectPharmacy?: (pharmacy: PharmacyWithDistance) => void;
+  onShowList?: () => void;
 }
 
 // 地図の中心を更新するコンポーネント
@@ -143,7 +144,7 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;');
 }
 
-export function Map({ pharmacies, userLocation, onSelectPharmacy }: MapProps) {
+export function Map({ pharmacies, userLocation, onSelectPharmacy, onShowList }: MapProps) {
   // 座標のある薬局のみ
   const mappablePharmacies = pharmacies.filter(p =>
     p.lat !== null && p.lng !== null && isLikelyInJapan(p.lat, p.lng)
@@ -195,6 +196,23 @@ export function Map({ pharmacies, userLocation, onSelectPharmacy }: MapProps) {
         <p className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] px-3 py-1.5 text-xs bg-white/95 text-gray-600 rounded-full shadow-sm">
           地図には{MAP_MARKER_LIMIT}件まで表示しています。都道府県や距離で絞り込むと見やすくなります
         </p>
+      )}
+      {mappablePharmacies.length === 0 && (
+        <div className="absolute inset-x-3 bottom-3 z-[1000] px-3 py-3 bg-white/95 text-gray-700 rounded-xl shadow-md">
+          <p className="text-sm font-medium">近くに地図ピンはありません</p>
+          <p className="mt-1 text-sm text-gray-500">
+            一覧で{pharmacies.length.toLocaleString()}件を確認できます。電話やルートはそこからどうぞ。
+          </p>
+          {onShowList && (
+            <button
+              type="button"
+              onClick={onShowList}
+              className="mt-2 text-sm text-[#4AA8D9] hover:underline"
+            >
+              一覧を見る
+            </button>
+          )}
+        </div>
       )}
     <MapContainer
       center={center}
