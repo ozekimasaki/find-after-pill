@@ -20,6 +20,8 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
 
   const googleMapsUrl = getGoogleMapsRouteUrl();
   const likelyOpen = isLikelyOpenNow(pharmacy.businessHours);
+  const todayHours = formatTodayHours(pharmacy.businessHours);
+  const closedToday = todayHours === '本日休み';
 
   return (
     <article
@@ -27,7 +29,7 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
       onClick={onClick}
     >
       <div className="flex justify-between items-start gap-2">
-        <h3 className="font-bold text-gray-900 text-lg leading-tight scroll-mt-24 md:scroll-mt-40">{pharmacy.name}</h3>
+        <h3 className="font-bold text-gray-900 text-lg leading-tight scroll-mt-36 md:scroll-mt-44">{pharmacy.name}</h3>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
           {likelyOpen && (
             <span className="px-2 py-1 bg-[#EBF6FC] text-[#4AA8D9] text-xs font-medium rounded">
@@ -74,11 +76,15 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
       {/* 追加情報バッジ */}
       <div className="mt-2 flex flex-wrap gap-1.5">
         {pharmacy.businessHours && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded">
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded ${
+            closedToday
+              ? 'bg-gray-100 text-gray-600'
+              : 'bg-[#EBF6FC] text-[#4AA8D9]'
+          }`}>
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            {formatTodayHours(pharmacy.businessHours)}
+            {todayHours}
           </span>
         )}
         {hasAfterHoursSupport(pharmacy.afterHoursService) && (

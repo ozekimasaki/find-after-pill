@@ -177,11 +177,11 @@ export function PharmacyList({
           return (
             <div
               key={pharmacy.id}
-              className="animate-fadeIn scroll-mt-24 md:scroll-mt-40"
+              className="animate-fadeIn scroll-mt-36 md:scroll-mt-44"
               style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
             >
               {showHeader && (
-                <p className="text-sm font-medium text-gray-500 px-1 pb-1.5 scroll-mt-24 md:scroll-mt-40">
+                <p className="text-sm font-medium text-gray-500 px-1 pb-1.5 scroll-mt-36 md:scroll-mt-44">
                   {city}
                   {preferredMunicipality === city ? ' · 現在地付近' : ''}
                 </p>

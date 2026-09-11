@@ -351,7 +351,7 @@ function App() {
                 <div className="min-w-0 flex-1 md:col-span-2">
                   <SearchBar value={queryInput} onChange={setQueryInput} />
                 </div>
-                <div className="w-[9.25rem] shrink-0 md:w-auto">
+                <div className={`w-[9.25rem] shrink-0 md:w-auto ${userLocation ? 'hidden md:block' : ''}`}>
                   <PrefectureFilter
                     value={searchParams.prefecture || ''}
                     onChange={handlePrefectureChange}
@@ -371,6 +371,15 @@ function App() {
                 </div>
               )}
               <div className={extrasOpen ? 'block' : 'hidden md:block'}>
+              {userLocation && (
+                <div className="mt-2 md:hidden">
+                  <PrefectureFilter
+                    value={searchParams.prefecture || ''}
+                    onChange={handlePrefectureChange}
+                    counts={prefectureCounts}
+                  />
+                </div>
+              )}
               <div className="mt-2 md:mt-3">
                 <FilterPanel
                   searchParams={searchParams}
@@ -410,10 +419,11 @@ function App() {
             </div>
         </div>
 
+        <div className="flex items-center gap-2 mb-2">
         <div
           id="results"
           ref={resultAreaRef}
-          className="text-sm text-gray-600 mb-2 px-1 transition-opacity duration-200 scroll-mt-24 md:scroll-mt-40"
+          className="min-w-0 flex-1 text-sm text-gray-600 transition-opacity duration-200 scroll-mt-36 md:scroll-mt-44"
           aria-live="polite"
         >
           {loading ? (
@@ -427,7 +437,6 @@ function App() {
             <span>
               <strong className="text-gray-900">{locationSearch.prefecture}</strong>
               {' '}<strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong>件
-              <span className="text-gray-400"> · 地図ピンなし</span>
             </span>
           ) : userLocation && searchParams.radius && locationSearch.fallback === 'ungeocoded' ? (
             <span>
@@ -452,6 +461,35 @@ function App() {
               全国 <strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong>件
             </span>
           )}
+        </div>
+        <nav aria-label="表示切替" className="shrink-0 flex rounded-lg bg-white p-0.5 shadow-sm" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={viewMode === 'list'}
+            onClick={() => setViewMode('list')}
+            className={`px-2.5 py-1 rounded-md font-medium text-sm transition-colors ${
+              viewMode === 'list'
+                ? 'bg-[#65BBE9] text-white'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            一覧
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={viewMode === 'map'}
+            onClick={() => setViewMode('map')}
+            className={`px-2.5 py-1 rounded-md font-medium text-sm transition-colors ${
+              viewMode === 'map'
+                ? 'bg-[#65BBE9] text-white'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            地図
+          </button>
+        </nav>
         </div>
 
         {wasAutoEnabled && searchParams.afterHoursOnly && (
@@ -497,35 +535,6 @@ function App() {
         )}
 
         <h2 className="sr-only">検索結果</h2>
-        <nav aria-label="表示切替" className="flex gap-2 mb-3" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={viewMode === 'list'}
-            onClick={() => setViewMode('list')}
-            className={`flex-1 py-1.5 px-3 rounded-lg font-medium text-sm transition-colors ${
-              viewMode === 'list'
-                ? 'bg-[#65BBE9] text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            一覧
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={viewMode === 'map'}
-            onClick={() => setViewMode('map')}
-            className={`flex-1 py-1.5 px-3 rounded-lg font-medium text-sm transition-colors ${
-              viewMode === 'map'
-                ? 'bg-[#65BBE9] text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            地図
-          </button>
-        </nav>
-
         {viewMode === 'list' ? (
           <PharmacyList
             pharmacies={pharmacies}

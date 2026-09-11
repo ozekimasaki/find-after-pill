@@ -7,7 +7,7 @@ interface MunicipalityChipsProps {
   onSelect: (municipality: string) => void;
 }
 
-const PREVIEW_COUNT = 8;
+const PREVIEW_COUNT = 4;
 
 export function MunicipalityChips({
   counts,
@@ -38,7 +38,6 @@ export function MunicipalityChips({
       <div className="flex flex-wrap gap-1.5">
         {visible.map(([name, count]) => {
           const isActive = selected === name;
-          const isPreferred = preferred === name;
           return (
             <button
               key={name}
@@ -46,19 +45,19 @@ export function MunicipalityChips({
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => onSelect(name)}
               aria-pressed={isActive}
-              className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm rounded-full border whitespace-nowrap ${
+              aria-current={preferred === name ? 'true' : undefined}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs sm:text-sm rounded-full border whitespace-nowrap ${
                 isActive
                   ? 'bg-[#65BBE9] text-white border-transparent'
-                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  : preferred === name
+                    ? 'bg-[#EBF6FC] text-gray-800 border-[#65BBE9]'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}
             >
               {name}
               <span className={isActive ? 'text-white/90' : 'text-gray-400'}>
                 {count.toLocaleString()}
               </span>
-              {isPreferred && !isActive && (
-                <span className="text-[#4AA8D9]">近く</span>
-              )}
             </button>
           );
         })}
@@ -66,7 +65,7 @@ export function MunicipalityChips({
           <button
             type="button"
             onClick={() => setExpanded((current) => !current)}
-            className="inline-flex items-center px-2 py-0.5 text-sm text-[#4AA8D9] rounded-full border border-transparent hover:bg-[#EBF6FC]"
+            className="inline-flex items-center px-2 py-0.5 text-xs sm:text-sm text-[#4AA8D9] rounded-full border border-transparent hover:bg-[#EBF6FC]"
           >
             {expanded ? 'とじる' : `ほか${cities.length - PREVIEW_COUNT}の市区`}
           </button>
