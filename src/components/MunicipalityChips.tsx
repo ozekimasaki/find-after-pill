@@ -7,7 +7,7 @@ interface MunicipalityChipsProps {
 export function MunicipalityChips({ counts, selected, onSelect }: MunicipalityChipsProps) {
   const cities = Object.entries(counts)
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ja'))
-    .slice(0, 16);
+    .slice(0, 24);
 
   if (cities.length < 2) {
     return null;
