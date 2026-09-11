@@ -218,20 +218,22 @@ function App() {
         </p>
 
         <h2 className="sr-only">薬局を検索</h2>
-        <div role="search">
-          <div className="bg-white rounded-xl shadow-sm p-4 mb-3">
-            <LocationButton
-              onClick={handleGetCurrentLocation}
-              loading={locationLoading}
-              hasLocation={!!userLocation}
-              onClear={handleClearLocation}
-            />
-            {locationError && (
-              <p className="mt-2 text-sm text-red-600">{locationError}</p>
-            )}
-          </div>
+        <div className="bg-white rounded-xl shadow-sm p-4 mb-3">
+          <LocationButton
+            onClick={handleGetCurrentLocation}
+            loading={locationLoading}
+            hasLocation={!!userLocation}
+            onClear={handleClearLocation}
+          />
+          {locationError && (
+            <p className="mt-2 text-sm text-red-600">{locationError}</p>
+          )}
+        </div>
 
-          <div className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 py-1.5 mb-3 border-b border-gray-100">
+        <div
+          role="search"
+          className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 py-1.5 mb-3 border-b border-gray-100"
+        >
             <div className="bg-white rounded-xl shadow-sm p-2.5 md:p-3">
               <div className="flex gap-2 md:grid md:grid-cols-3 md:gap-3">
                 <div className="min-w-0 flex-1 md:col-span-2">
@@ -281,7 +283,6 @@ function App() {
                 </div>
               )}
             </div>
-          </div>
         </div>
 
         <div

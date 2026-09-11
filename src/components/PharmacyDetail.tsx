@@ -154,7 +154,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
       {/* Modal */}
       <div
         ref={scrollRef}
-        className="relative w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[92dvh] overflow-auto animate-slideUp sm:animate-fadeInScale pb-[env(safe-area-inset-bottom)]"
+        className="relative w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[92dvh] overflow-auto animate-slideUp sm:animate-fadeInScale pb-[env(safe-area-inset-bottom)] isolate"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >

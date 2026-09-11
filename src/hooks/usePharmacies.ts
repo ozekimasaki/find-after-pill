@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { 
-  Pharmacy, 
-  PharmacyMeta, 
-  PharmacyWithDistance, 
+import type {
+  Pharmacy,
+  PharmacyMeta,
+  PharmacyWithDistance,
   SearchParams,
-  GeoLocation 
+  GeoLocation
 } from '../types/pharmacy';
+import { PREFECTURES } from '../types/pharmacy';
 import { calculateDistance } from '../utils/distance';
 import { inferPrefecture } from '../utils/prefectureFromLocation';
 import { isLikelyInJapan } from '../utils/japanBounds';
@@ -34,6 +35,11 @@ interface UsePharmaciesReturn {
 }
 
 const API_BASE = '/api';
+
+function prefectureSortIndex(prefecture: string): number {
+  const index = (PREFECTURES as readonly string[]).indexOf(prefecture);
+  return index === -1 ? PREFECTURES.length : index;
+}
 
 /**
  * 薬局データを取得・管理するカスタムフック
@@ -200,9 +206,9 @@ export function usePharmacies(
       result.sort(compareOpenThenName);
     } else {
       result.sort((a, b) => {
-        const prefCompare = a.prefecture.localeCompare(b.prefecture, 'ja');
-        if (prefCompare !== 0) {
-          return prefCompare;
+        const prefDelta = prefectureSortIndex(a.prefecture) - prefectureSortIndex(b.prefecture);
+        if (prefDelta !== 0) {
+          return prefDelta;
         }
         return a.name.localeCompare(b.name, 'ja');
       });

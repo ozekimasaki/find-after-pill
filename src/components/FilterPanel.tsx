@@ -60,6 +60,14 @@ const FILTERS = [
 
 export function FilterPanel({ searchParams, setSearchParams }: FilterPanelProps) {
   const activeCount = FILTERS.filter((f) => searchParams[f.key]).length;
+  const clearFilters = () =>
+    setSearchParams({
+      openNowOnly: false,
+      afterHoursOnly: false,
+      noAdvanceCallRequired: false,
+      femalePharmacistOnly: false,
+      hasPrivateSpace: false,
+    });
 
   return (
     <div className="flex items-center gap-2 min-w-0">
@@ -71,22 +79,21 @@ export function FilterPanel({ searchParams, setSearchParams }: FilterPanelProps)
           </span>
           <button
             type="button"
-            onClick={() =>
-              setSearchParams({
-                openNowOnly: false,
-                afterHoursOnly: false,
-                noAdvanceCallRequired: false,
-                femalePharmacistOnly: false,
-                hasPrivateSpace: false,
-              })
-            }
+            onClick={clearFilters}
             className="hidden md:inline text-xs text-[#4AA8D9] hover:text-[#65BBE9] hover:underline shrink-0"
           >
             条件をクリア
           </button>
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="md:hidden shrink-0 text-sm text-[#4AA8D9] whitespace-nowrap"
+          >
+            クリア
+          </button>
         </>
       )}
-      <div className="flex gap-2 overflow-x-auto overscroll-x-contain pb-0.5 filter-chip-scroll">
+      <div className="flex gap-2 overflow-x-auto overscroll-x-contain px-0.5 min-w-0 flex-1 filter-chip-scroll">
         {FILTERS.map(({ key, label, shortLabel, icon }) => {
           const isActive = !!searchParams[key];
           return (
@@ -95,7 +102,7 @@ export function FilterPanel({ searchParams, setSearchParams }: FilterPanelProps)
               type="button"
               onClick={() => setSearchParams({ [key]: !isActive })}
               aria-pressed={isActive}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-full border whitespace-nowrap active:scale-95 transition-all duration-150 ${
+              className={`inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 text-sm rounded-full border whitespace-nowrap active:scale-95 transition-all duration-150 ${
                 isActive
                   ? 'bg-[#65BBE9] text-white border-transparent'
                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -107,23 +114,6 @@ export function FilterPanel({ searchParams, setSearchParams }: FilterPanelProps)
             </button>
           );
         })}
-        {activeCount > 0 && (
-          <button
-            type="button"
-            onClick={() =>
-              setSearchParams({
-                openNowOnly: false,
-                afterHoursOnly: false,
-                noAdvanceCallRequired: false,
-                femalePharmacistOnly: false,
-                hasPrivateSpace: false,
-              })
-            }
-            className="md:hidden inline-flex items-center px-3 py-1.5 text-sm text-[#4AA8D9] whitespace-nowrap"
-          >
-            クリア
-          </button>
-        )}
       </div>
     </div>
   );
