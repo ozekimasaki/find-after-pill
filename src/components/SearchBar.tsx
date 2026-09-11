@@ -7,7 +7,7 @@ interface SearchBarProps {
 export function SearchBar({
   value,
   onChange,
-  placeholder = '薬局名・住所・電話番号で検索',
+  placeholder = '薬局名・住所・電話',
 }: SearchBarProps) {
   return (
     <div className="relative">
