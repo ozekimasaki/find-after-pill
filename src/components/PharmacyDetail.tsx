@@ -266,66 +266,19 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
               />
             )}
 
-            {(pharmacy.pharmacistFemale !== undefined || pharmacy.pharmacistMale !== undefined || pharmacy.pharmacistOther !== undefined) && (
+            {(pharmacy.pharmacistFemale ?? 0) > 0 && (
               <DetailRow
                 icon={
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 }
-                label="販売可能薬剤師"
-                value={
-                  <div className="flex flex-wrap gap-2">
-                    {pharmacy.pharmacistFemale !== undefined && pharmacy.pharmacistFemale > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#EBF6FC] text-[#4AA8D9] rounded text-sm">
-                        女性 {pharmacy.pharmacistFemale}名
-                      </span>
-                    )}
-                    {pharmacy.pharmacistMale !== undefined && pharmacy.pharmacistMale > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">
-                        男性 {pharmacy.pharmacistMale}名
-                      </span>
-                    )}
-                    {pharmacy.pharmacistOther !== undefined && pharmacy.pharmacistOther > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm">
-                        その他 {pharmacy.pharmacistOther}名
-                      </span>
-                    )}
-                    {((pharmacy.pharmacistFemale || 0) + (pharmacy.pharmacistMale || 0) + (pharmacy.pharmacistOther || 0)) > 0 && (
-                      <span className="text-gray-500 text-sm">
-                        （計 {(pharmacy.pharmacistFemale || 0) + (pharmacy.pharmacistMale || 0) + (pharmacy.pharmacistOther || 0)}名）
-                      </span>
-                    )}
-                  </div>
-                }
+                label="女性薬剤師"
+                value={`${pharmacy.pharmacistFemale}名`}
               />
             )}
 
-            {pharmacy.afterHoursService && (
-              <DetailRow
-                icon={
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                  </svg>
-                }
-                label="時間外対応"
-                value={
-                  <div>
-                    <span>{pharmacy.afterHoursService}</span>
-                    {pharmacy.afterHoursPhone && (
-                      <div className="mt-1">
-                        <span className="text-sm text-gray-500">時間外電話: </span>
-                        <a href={toTelHref(pharmacy.afterHoursPhone)} className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline">
-                          {formatPhoneDisplay(pharmacy.afterHoursPhone)}
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                }
-              />
-            )}
-
-            {pharmacy.advanceCallRequired && (
+            {pharmacy.advanceCallRequired === '要' && (
               <DetailRow
                 icon={
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -333,64 +286,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
                   </svg>
                 }
                 label="事前電話連絡"
-                value={pharmacy.advanceCallRequired}
-              />
-            )}
-
-            {pharmacy.privacyMeasures && (
-              <DetailRow
-                icon={
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                }
-                label="プライバシー確保策"
-                value={pharmacy.privacyMeasures}
-              />
-            )}
-
-            {pharmacy.website && (
-              <DetailRow
-                icon={
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                  </svg>
-                }
-                label="ホームページ"
-                value={
-                  <a
-                    href={normalizeUrl(pharmacy.website)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline break-all"
-                  >
-                    {pharmacy.website}
-                  </a>
-                }
-              />
-            )}
-
-            {pharmacy.notes && (
-              <DetailRow
-                icon={
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                }
-                label="備考"
-                value={pharmacy.notes}
-              />
-            )}
-
-            {pharmacy.pharmacyNumber && (
-              <DetailRow
-                icon={
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                  </svg>
-                }
-                label="薬局等番号"
-                value={<span className="text-gray-600 font-mono text-sm">{pharmacy.pharmacyNumber}</span>}
+                value="訪問前に電話が必要です"
               />
             )}
           </div>
@@ -452,6 +348,119 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
             </svg>
             {copied ? 'コピーしました' : '共有する'}
           </button>
+
+          <details className="mt-4 rounded-lg border border-gray-200 bg-white">
+            <summary className="cursor-pointer px-4 py-3 text-sm text-gray-700">
+              その他の情報
+            </summary>
+            <div className="px-4 pb-4 space-y-3">
+              {pharmacy.privacyMeasures && (
+                <DetailRow
+                  icon={
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  }
+                  label="プライバシー確保策"
+                  value={pharmacy.privacyMeasures}
+                />
+              )}
+              {(pharmacy.pharmacistMale !== undefined || pharmacy.pharmacistOther !== undefined) && (
+                <DetailRow
+                  icon={
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  }
+                  label="販売可能薬剤師"
+                  value={
+                    <div className="flex flex-wrap gap-2">
+                      {(pharmacy.pharmacistFemale ?? 0) > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 bg-[#EBF6FC] text-[#4AA8D9] rounded text-sm">
+                          女性 {pharmacy.pharmacistFemale}名
+                        </span>
+                      )}
+                      {(pharmacy.pharmacistMale ?? 0) > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 bg-[#EBF6FC] text-[#4AA8D9] rounded text-sm">
+                          男性 {pharmacy.pharmacistMale}名
+                        </span>
+                      )}
+                      {(pharmacy.pharmacistOther ?? 0) > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm">
+                          その他 {pharmacy.pharmacistOther}名
+                        </span>
+                      )}
+                    </div>
+                  }
+                />
+              )}
+              {pharmacy.afterHoursService && (
+                <DetailRow
+                  icon={
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                  }
+                  label="時間外対応"
+                  value={
+                    <div>
+                      <span>{pharmacy.afterHoursService}</span>
+                      {pharmacy.afterHoursPhone && (
+                        <div className="mt-1">
+                          <span className="text-sm text-gray-500">時間外電話: </span>
+                          <a href={toTelHref(pharmacy.afterHoursPhone)} className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline">
+                            {formatPhoneDisplay(pharmacy.afterHoursPhone)}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  }
+                />
+              )}
+              {pharmacy.website && (
+                <DetailRow
+                  icon={
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                    </svg>
+                  }
+                  label="ホームページ"
+                  value={
+                    <a
+                      href={normalizeUrl(pharmacy.website)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline break-all"
+                    >
+                      {pharmacy.website}
+                    </a>
+                  }
+                />
+              )}
+              {pharmacy.notes && (
+                <DetailRow
+                  icon={
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  }
+                  label="備考"
+                  value={pharmacy.notes}
+                />
+              )}
+              {pharmacy.pharmacyNumber && (
+                <DetailRow
+                  icon={
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                    </svg>
+                  }
+                  label="薬局等番号"
+                  value={<span className="text-gray-600 font-mono text-sm">{pharmacy.pharmacyNumber}</span>}
+                />
+              )}
+            </div>
+          </details>
         </div>
         </div>
 

@@ -292,6 +292,13 @@ function App() {
   }, [searchParams, viewMode, userLocation, hoursTouched]);
 
   useEffect(() => {
+    if (!locationError) {
+      return;
+    }
+    document.getElementById('prefecture-select')?.focus();
+  }, [locationError]);
+
+  useEffect(() => {
     const handleScroll = () => {
       const y = window.scrollY;
       setShowBackToTop(y > 400);
@@ -367,7 +374,7 @@ function App() {
               onClear={handleClearLocation}
             />
             {locationError && (
-              <p className="mt-2 text-sm text-red-600">{locationError}</p>
+              <p className="mt-2 text-sm text-[#4AA8D9]">{locationError}</p>
             )}
           </div>
         )}
@@ -384,6 +391,7 @@ function App() {
                       value={searchParams.prefecture || ''}
                       onChange={handlePrefectureChange}
                       counts={prefectureCounts}
+                      emphasized={Boolean(locationError)}
                     />
                   </div>
                   <SearchToggleButton

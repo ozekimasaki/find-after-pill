@@ -5,6 +5,7 @@ interface PrefectureFilterProps {
   onChange: (prefecture: string) => void;
   counts?: Record<string, number>;
   selectId?: string;
+  emphasized?: boolean;
 }
 
 export function PrefectureFilter({
@@ -12,6 +13,7 @@ export function PrefectureFilter({
   onChange,
   counts = {},
   selectId = 'prefecture-select',
+  emphasized = false,
 }: PrefectureFilterProps) {
   return (
     <div className="relative">
@@ -22,7 +24,9 @@ export function PrefectureFilter({
         id={selectId}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none pl-2.5 pr-7 md:pl-4 md:pr-10 py-2 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#65BBE9] focus:border-transparent outline-none bg-white cursor-pointer truncate"
+        className={`w-full appearance-none pl-2.5 pr-7 md:pl-4 md:pr-10 py-2 md:py-3 text-sm md:text-base border rounded-lg focus:ring-2 focus:ring-[#65BBE9] focus:border-transparent outline-none bg-white cursor-pointer truncate ${
+          emphasized ? 'border-[#65BBE9] ring-2 ring-[#65BBE9]' : 'border-gray-300'
+        }`}
         aria-label="都道府県"
       >
         <option value="">{value ? '指定を解除' : '都道府県'}</option>

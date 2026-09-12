@@ -24,13 +24,13 @@ const LOW_ACCURACY_OPTIONS: PositionOptions = {
 function toErrorMessage(err: GeolocationPositionError): string {
   switch (err.code) {
     case err.PERMISSION_DENIED:
-      return '位置情報の使用が許可されていません。ブラウザの設定を許可するか、都道府県から探してください';
+      return '位置情報は使わずに進めます。下の都道府県から探してください';
     case err.POSITION_UNAVAILABLE:
-      return '位置情報を取得できませんでした。都道府県から探すこともできます';
+      return 'いま位置を取れませんでした。下の都道府県から探してください';
     case err.TIMEOUT:
-      return '位置情報の取得がタイムアウトしました。都道府県から探すこともできます';
+      return '位置の取得に時間がかかりました。下の都道府県から探してください';
     default:
-      return '位置情報の取得に失敗しました。都道府県から探すこともできます';
+      return '位置を取れませんでした。下の都道府県から探してください';
   }
 }
 
@@ -44,7 +44,7 @@ export function useGeolocation(): UseGeolocationReturn {
 
   const getCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      setError('お使いのブラウザは位置情報に対応していません。都道府県から探してください');
+      setError('位置情報に未対応です。下の都道府県から探してください');
       return;
     }
 
