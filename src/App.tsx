@@ -499,7 +499,7 @@ function App() {
             </div>
         </div>
 
-        <div className="flex items-center gap-2 mb-1.5">
+        <div className={`flex items-center gap-2 ${hasSearchScope ? 'mb-1.5' : ''}`}>
         <div
           id="results"
           ref={resultAreaRef}
@@ -509,7 +509,7 @@ function App() {
           {listLoading ? (
             <span className="text-gray-400">お近くの薬局を探しています...</span>
           ) : !hasSearchScope ? (
-            <span>現在地か都道府県を選んでください</span>
+            <span className="sr-only">現在地か都道府県を選んでください</span>
           ) : selectedMunicipality ? (
             <span>
               <strong className="text-gray-900">{shortMunicipalityLabel(selectedMunicipality, preferredCity || selectedMunicipality)}</strong>
