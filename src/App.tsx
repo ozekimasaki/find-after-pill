@@ -399,7 +399,7 @@ function App() {
       </a>
       <Header meta={meta} loadedCount={loadedCount} compact={hasSearchScope} />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-3 sm:py-6">
+      <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-4 py-3 sm:py-6">
         <h2 className="sr-only">薬局を検索</h2>
         {!userLocation && (
           <div className={`bg-white rounded-xl shadow-sm p-3 mb-2 ${hasSearchScope ? 'hidden md:block' : ''}`}>
@@ -590,8 +590,6 @@ function App() {
               </div>
             </div>
         </div>
-
-        {!hasSearchScope && <SupportBanner />}
 
         {locationError && hasSearchScope && !userLocation && (
           <p className="text-sm text-[#4AA8D9] px-1 mb-2">{locationError}</p>
@@ -787,7 +785,10 @@ function App() {
         )}
         </div>
 
-        <FAQ preview={!hasSearchScope} />
+        <div className={!hasSearchScope ? 'mt-auto pt-4' : ''}>
+          {!hasSearchScope && <SupportBanner />}
+          <FAQ preview={!hasSearchScope} />
+        </div>
       </main>
 
       <Footer />
