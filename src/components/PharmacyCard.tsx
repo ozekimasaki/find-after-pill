@@ -45,7 +45,7 @@ export function PharmacyCard({
         onClick={openDetail}
         onKeyDown={handleKeyDown}
         tabIndex={0}
-        aria-label={`${pharmacy.name}の詳細を開く`}
+        aria-label={`${pharmacy.name}の詳細を開く${likelyOpen && !closedToday ? '、開局中の目安' : ''}${pharmacy.advanceCallRequired === '要' ? '、要事前連絡' : ''}`}
       >
         <div className="flex items-center gap-2">
           <h3 className="min-w-0 flex-1 font-bold text-gray-900 text-[15px] leading-snug truncate scroll-mt-28 md:scroll-mt-44">
@@ -66,22 +66,28 @@ export function PharmacyCard({
           </span>
         </div>
 
-        <p className="mt-0.5 text-sm leading-snug truncate">
+        <p className="mt-0.5 flex items-baseline min-w-0 text-sm leading-snug">
           {likelyOpen && !closedToday && (
-            <span className="text-[#4AA8D9]">開局中 · </span>
+            <>
+              <span className="shrink-0 text-[#4AA8D9]">開局中</span>
+              <span className="shrink-0 text-gray-300 px-1" aria-hidden="true">·</span>
+            </>
           )}
-          <span className="text-gray-600">
-            {formatPharmacyAddress(pharmacy.address, pharmacy.prefecture, activeMunicipality)}
-          </span>
           {pharmacy.businessHours && compactHours && (
-            <span className="text-gray-500"> · {compactHours}</span>
+            <>
+              <span className="shrink-0 text-gray-500">{compactHours}</span>
+              <span className="shrink-0 text-gray-300 px-1" aria-hidden="true">·</span>
+            </>
           )}
           {pharmacy.advanceCallRequired === '要' && (
-            <span className="text-amber-700"> · 要事前連絡</span>
+            <>
+              <span className="shrink-0 text-amber-700">要事前連絡</span>
+              <span className="shrink-0 text-gray-300 px-1" aria-hidden="true">·</span>
+            </>
           )}
-          {pharmacy.pharmacistFemale !== undefined && pharmacy.pharmacistFemale > 0 && (
-            <span className="text-gray-500"> · 女性薬剤師</span>
-          )}
+          <span className="min-w-0 truncate text-gray-600">
+            {formatPharmacyAddress(pharmacy.address, pharmacy.prefecture, activeMunicipality)}
+          </span>
         </p>
       </div>
 
