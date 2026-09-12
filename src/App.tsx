@@ -220,6 +220,8 @@ function App() {
     setSearchParams({
       radius,
       municipality: undefined,
+      prefecture: undefined,
+      prefectureIsHint: true,
     });
   }, [getCurrentLocation, setSearchParams, radius]);
 
