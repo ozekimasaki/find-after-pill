@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { PharmacyWithDistance } from '../types/pharmacy';
 import { PharmacyCard } from './PharmacyCard';
-import { extractMunicipality } from '../utils/municipality';
+import { extractMunicipality, municipalityGroupKey } from '../utils/municipality';
 import { shortMunicipalityLabel } from '../utils/municipalityRank';
 
 interface PharmacyListEmptyActions {
@@ -66,6 +66,7 @@ export function PharmacyList({
 
   const displayedPharmacies = pharmacies.slice(0, displayCount);
   const hasMore = displayCount < pharmacies.length;
+  const collapseParents = Boolean(groupByMunicipality && !activeMunicipality);
 
   const loadMore = () => {
     setDisplayCount((prev) => prev + ITEMS_PER_PAGE);
@@ -159,11 +160,17 @@ export function PharmacyList({
       <div className="space-y-1.5">
         {displayedPharmacies.map((pharmacy, index) => {
           const city = groupByMunicipality
-            ? (extractMunicipality(pharmacy.address, pharmacy.prefecture) ?? 'その他')
+            ? municipalityGroupKey(
+              extractMunicipality(pharmacy.address, pharmacy.prefecture),
+              collapseParents,
+            )
             : null;
           const previous = index > 0 ? displayedPharmacies[index - 1] : null;
           const previousCity = groupByMunicipality && previous
-            ? (extractMunicipality(previous.address, previous.prefecture) ?? 'その他')
+            ? municipalityGroupKey(
+              extractMunicipality(previous.address, previous.prefecture),
+              collapseParents,
+            )
             : null;
           const isNewGroup = Boolean(city && city !== previousCity);
           // 先頭グループは市区チップと重複するので見出しを出さない

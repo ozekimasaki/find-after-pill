@@ -12,7 +12,7 @@ import { inferPrefecture } from '../utils/prefectureFromLocation';
 import { isLikelyInJapan } from '../utils/japanBounds';
 import { isLikelyOpenNow, supportsAfterHoursFilter } from '../utils/pharmacyAvailability';
 import { pharmacyMatchesQuery } from '../utils/searchText';
-import { extractMunicipality, municipalityMatches, shouldGroupPharmaciesByMunicipality } from '../utils/municipality';
+import { extractMunicipality, municipalityGroupKey, municipalityMatches, shouldGroupPharmaciesByMunicipality } from '../utils/municipality';
 import { compareMunicipalityNames } from '../utils/municipalityRank';
 import { matchKnownMunicipality } from '../utils/reverseMunicipality';
 import { dedupePharmacies } from '../utils/pharmacyIdentity';
@@ -264,20 +264,33 @@ export function usePharmacies(
         return compareOpenThenName(a, b);
       });
     } else if (groupByMunicipality) {
+      const collapseParents = !municipalityFilter;
       const cityCounts: Record<string, number> = {};
       for (const pharmacy of result) {
-        const city = extractMunicipality(pharmacy.address, pharmacy.prefecture) ?? 'その他';
-        cityCounts[city] = (cityCounts[city] || 0) + 1;
+        const city = extractMunicipality(pharmacy.address, pharmacy.prefecture);
+        const key = municipalityGroupKey(city, collapseParents);
+        cityCounts[key] = (cityCounts[key] || 0) + 1;
       }
       const preferredCity = preferredMunicipality
         ? matchKnownMunicipality(preferredMunicipality, cityCounts)
+          || (collapseParents
+            ? matchKnownMunicipality(
+              municipalityGroupKey(preferredMunicipality, true),
+              cityCounts,
+            )
+            : null)
         : null;
       result.sort((a, b) => {
-        const cityA = extractMunicipality(a.address, a.prefecture) ?? 'その他';
-        const cityB = extractMunicipality(b.address, b.prefecture) ?? 'その他';
-        const cityDelta = compareMunicipalityNames(cityA, cityB, preferredCity, cityCounts);
-        if (cityDelta !== 0) {
-          return cityDelta;
+        const cityA = extractMunicipality(a.address, a.prefecture);
+        const cityB = extractMunicipality(b.address, b.prefecture);
+        const groupA = municipalityGroupKey(cityA, collapseParents);
+        const groupB = municipalityGroupKey(cityB, collapseParents);
+        const groupDelta = compareMunicipalityNames(groupA, groupB, preferredCity, cityCounts);
+        if (groupDelta !== 0) {
+          return groupDelta;
+        }
+        if (collapseParents && cityA && cityB && cityA !== cityB) {
+          return cityA.localeCompare(cityB, 'ja');
         }
         return compareOpenThenName(a, b);
       });

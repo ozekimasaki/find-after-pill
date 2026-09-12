@@ -37,6 +37,20 @@ export function shouldGroupPharmaciesByMunicipality(
 }
 
 /**
+ * 都道府県一覧では政令市の区を市に畳む。市を選んだあとは区のまま。
+ */
+export function municipalityGroupKey(
+  city: string | null | undefined,
+  collapseParents: boolean,
+): string {
+  const name = city || 'その他';
+  if (!collapseParents) {
+    return name;
+  }
+  return designatedCityName(name) ?? name;
+}
+
+/**
  * 住所から市区町村（政令市は区まで）を取り出す。
  * 「東村山市」の「村」など、名前の途中の字を市区町村接尾辞と誤認しない。
  */
