@@ -29,7 +29,7 @@ export function PrefectureFilter({
         }`}
         aria-label="都道府県"
       >
-        <option value="">{value ? '指定を解除' : '都道府県'}</option>
+        <option value="">{value ? '指定を解除' : '都道府県から探す'}</option>
         {PREFECTURES.map((pref) => (
           <option key={pref} value={pref}>
             {pref} {counts[pref] ? `(${counts[pref]})` : ''}
