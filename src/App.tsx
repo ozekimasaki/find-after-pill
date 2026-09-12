@@ -371,7 +371,7 @@ function App() {
 
         <div
           role="search"
-          className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 py-1.5 mb-3 border-b border-gray-100"
+          className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 py-1 mb-2 border-b border-gray-100"
         >
             <div className="bg-white rounded-xl shadow-sm p-2 md:p-3">
               {userLocation && (
@@ -493,11 +493,11 @@ function App() {
             </div>
         </div>
 
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-1.5">
         <div
           id="results"
           ref={resultAreaRef}
-          className="min-w-0 flex-1 text-sm text-gray-600 transition-opacity duration-200 scroll-mt-32 md:scroll-mt-44"
+          className="min-w-0 flex-1 text-sm text-gray-600 transition-opacity duration-200 scroll-mt-28 md:scroll-mt-44"
           aria-live="polite"
         >
           {listLoading ? (

@@ -53,7 +53,7 @@ export function MunicipalityChips({
   const hiddenCount = Math.max(0, cities.length - visible.length);
 
   return (
-    <div className="mb-2">
+    <div className="mb-1.5">
       <p className="sr-only">市区町村で絞り込む</p>
       <div className="flex flex-wrap gap-1.5">
         {visible.map(([name, count]) => {
