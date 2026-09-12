@@ -43,7 +43,7 @@ export function Header({ meta, loadedCount, compact = false }: HeaderProps) {
             <span>
               検索できる薬局: {(loadedCount ?? meta?.totalCount ?? 0).toLocaleString()}件
             </span>
-            {meta && <span>最終更新: {formatDate(meta.lastUpdated)}</span>}
+            {meta && <span className="hidden sm:inline">最終更新: {formatDate(meta.lastUpdated)}</span>}
           </div>
         )}
       </div>

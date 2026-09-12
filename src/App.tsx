@@ -351,18 +351,15 @@ function App() {
       </a>
       <Header meta={meta} loadedCount={loadedCount} compact={!!userLocation} />
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-4 sm:py-6">
-        {!userLocation && <SupportBanner />}
-
-        {!userLocation && (
-          <p className="text-sm text-gray-500 mb-3 px-1">
-            処方箋なしで購入できます。まずはお近くの薬局を見つけましょう。
-          </p>
-        )}
-
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-3 sm:py-6">
         <h2 className="sr-only">薬局を検索</h2>
         {(!userLocation || locationLoading || locationError) && (
-          <div className="bg-white rounded-xl shadow-sm p-4 mb-3">
+          <div className="bg-white rounded-xl shadow-sm p-3 mb-2">
+            {!userLocation && !locationLoading && (
+              <p className="text-sm text-gray-600 mb-2 text-center">
+                処方箋なしで購入できます
+              </p>
+            )}
             <LocationButton
               onClick={handleGetCurrentLocation}
               loading={locationLoading}
@@ -499,6 +496,8 @@ function App() {
             </div>
         </div>
 
+        {!userLocation && <SupportBanner />}
+
         <div className={`flex items-center gap-2 ${hasSearchScope ? 'mb-1.5' : ''}`}>
         <div
           id="results"
@@ -634,10 +633,7 @@ function App() {
 
         <h2 className="sr-only">検索結果</h2>
         {!hasSearchScope ? (
-          <div className="bg-white rounded-xl border border-gray-200 px-4 py-8 text-center">
-            <p className="text-gray-800 font-medium">いまいる場所から探すと、電話できる薬局がすぐ出ます</p>
-            <p className="mt-2 text-sm text-gray-500">上のボタンで現在地を使うか、都道府県から選べます</p>
-          </div>
+          <p className="sr-only">現在地か都道府県を選ぶと、電話できる薬局が出ます</p>
         ) : viewMode === 'list' ? (
           <PharmacyList
             pharmacies={pharmacies}

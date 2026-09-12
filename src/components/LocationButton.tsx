@@ -62,7 +62,7 @@ export function LocationButton({ onClick, loading, hasLocation, onClear }: Locat
         )}
       </button>
       <p className="mt-1.5 text-xs text-gray-400 text-center">
-        GPSで最寄りの薬局を検索します・位置情報は薬局検索のみに使用し、保存されません
+        位置情報は保存しません
       </p>
     </div>
   );

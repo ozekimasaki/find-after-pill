@@ -33,21 +33,11 @@ const ITEMS_PER_PAGE = 20;
 
 function SkeletonCard() {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 animate-pulse">
-      <div className="flex justify-between items-start gap-2">
-        <div className="h-5 bg-gray-200 rounded w-3/5" />
-        <div className="h-6 bg-gray-200 rounded w-16" />
-      </div>
-      <div className="mt-3 h-4 bg-gray-200 rounded w-4/5" />
-      <div className="mt-2 h-4 bg-gray-200 rounded w-1/3" />
-      <div className="mt-3 flex gap-1.5">
-        <div className="h-5 bg-gray-200 rounded w-20" />
-        <div className="h-5 bg-gray-200 rounded w-24" />
-      </div>
-      <div className="mt-3 flex gap-2">
-        <div className="h-8 bg-gray-200 rounded w-24" />
-        <div className="h-8 bg-gray-200 rounded w-20" />
-      </div>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 animate-pulse">
+      <div className="h-5 bg-gray-200 rounded w-3/5" />
+      <div className="mt-1 h-4 bg-gray-200 rounded w-4/5" />
+      <div className="mt-1 h-4 bg-gray-200 rounded w-24" />
+      <div className="mt-1.5 h-8 bg-gray-200 rounded-lg w-full" />
     </div>
   );
 }
@@ -84,7 +74,7 @@ export function PharmacyList({
   if (loading) {
     return (
       <div className="space-y-3" aria-busy="true" aria-live="polite">
-        {Array.from({ length: 4 }).map((_, i) => (
+        {Array.from({ length: 5 }).map((_, i) => (
           <SkeletonCard key={i} />
         ))}
       </div>
