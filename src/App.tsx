@@ -371,13 +371,13 @@ function App() {
       >
         検索結果へスキップ
       </a>
-      <Header meta={meta} loadedCount={loadedCount} compact={!!userLocation} />
+      <Header meta={meta} loadedCount={loadedCount} compact={hasSearchScope} />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-3 sm:py-6">
         <h2 className="sr-only">薬局を検索</h2>
-        {(!userLocation || locationLoading || locationError) && (
-          <div className="bg-white rounded-xl shadow-sm p-3 mb-2">
-            {!userLocation && !locationLoading && (
+        {!userLocation && (
+          <div className={`bg-white rounded-xl shadow-sm p-3 mb-2 ${hasSearchScope ? 'hidden md:block' : ''}`}>
+            {!locationLoading && (
               <p className="text-sm text-gray-600 mb-2 text-center">
                 処方箋なしで購入できます
               </p>
@@ -410,6 +410,27 @@ function App() {
                       emphasized={Boolean(locationError)}
                     />
                   </div>
+                  {hasSearchScope && (
+                    <button
+                      type="button"
+                      onClick={handleGetCurrentLocation}
+                      disabled={locationLoading}
+                      aria-label="現在地から探す"
+                      className="shrink-0 inline-flex items-center justify-center w-8 h-8 text-[#4AA8D9] rounded-lg hover:bg-[#EBF6FC] disabled:opacity-50"
+                    >
+                      {locationLoading ? (
+                        <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
                   <SearchToggleButton
                     open={searchOpen}
                     active={Boolean(queryInput)}
@@ -537,7 +558,11 @@ function App() {
             </div>
         </div>
 
-        {!userLocation && <SupportBanner />}
+        {!hasSearchScope && <SupportBanner />}
+
+        {locationError && hasSearchScope && !userLocation && (
+          <p className="text-sm text-[#4AA8D9] px-1 mb-2">{locationError}</p>
+        )}
 
         <div className={`flex items-center gap-2 ${hasSearchScope ? 'mb-1.5' : ''}`}>
         <div
