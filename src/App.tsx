@@ -149,7 +149,13 @@ function App() {
     searchParams.femalePharmacistOnly,
     searchParams.hasPrivateSpace,
   ].filter(Boolean).length;
-  const extrasOpen = filtersPinned || (!scrolled && !userLocation);
+  const hasSearchScope = Boolean(
+    userLocation ||
+    searchParams.prefecture ||
+    searchParams.query ||
+    searchParams.municipality
+  );
+  const extrasOpen = filtersPinned || (!scrolled && !userLocation && hasSearchScope);
   const nextRadius = RADIUS_OPTIONS.find((option) => option > radius);
   const hasActiveFilters = Boolean(
     searchParams.query ||
@@ -502,6 +508,8 @@ function App() {
         >
           {listLoading ? (
             <span className="text-gray-400">お近くの薬局を探しています...</span>
+          ) : !hasSearchScope ? (
+            <span>現在地か都道府県を選んでください</span>
           ) : selectedMunicipality ? (
             <span>
               <strong className="text-gray-900">{shortMunicipalityLabel(selectedMunicipality, preferredCity || selectedMunicipality)}</strong>
@@ -548,6 +556,7 @@ function App() {
             </span>
           )}
         </div>
+        {hasSearchScope && (
         <nav aria-label="表示切替" className="shrink-0 flex rounded-lg bg-white p-0.5 shadow-sm" role="tablist">
           <button
             type="button"
@@ -576,9 +585,10 @@ function App() {
             地図
           </button>
         </nav>
+        )}
         </div>
 
-        {wasAutoEnabled && searchParams.afterHoursOnly && (
+        {hasSearchScope && wasAutoEnabled && searchParams.afterHoursOnly && (
           <p className="text-xs text-gray-400 flex items-center gap-1 px-1 mb-2">
             <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -623,7 +633,12 @@ function App() {
         )}
 
         <h2 className="sr-only">検索結果</h2>
-        {viewMode === 'list' ? (
+        {!hasSearchScope ? (
+          <div className="bg-white rounded-xl border border-gray-200 px-4 py-8 text-center">
+            <p className="text-gray-800 font-medium">いまいる場所から探すと、電話できる薬局がすぐ出ます</p>
+            <p className="mt-2 text-sm text-gray-500">上のボタンで現在地を使うか、都道府県から選べます</p>
+          </div>
+        ) : viewMode === 'list' ? (
           <PharmacyList
             pharmacies={pharmacies}
             loading={listLoading}
