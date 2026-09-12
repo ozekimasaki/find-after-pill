@@ -12,7 +12,7 @@ import { inferPrefecture } from '../utils/prefectureFromLocation';
 import { isLikelyInJapan } from '../utils/japanBounds';
 import { isLikelyOpenNow, supportsAfterHoursFilter } from '../utils/pharmacyAvailability';
 import { pharmacyMatchesQuery } from '../utils/searchText';
-import { extractMunicipality } from '../utils/municipality';
+import { extractMunicipality, municipalityMatches, shouldGroupPharmaciesByMunicipality } from '../utils/municipality';
 import { compareMunicipalityNames } from '../utils/municipalityRank';
 import { matchKnownMunicipality } from '../utils/reverseMunicipality';
 import { dedupePharmacies } from '../utils/pharmacyIdentity';
@@ -222,7 +222,10 @@ export function usePharmacies(
 
     if (municipalityFilter) {
       result = result.filter((pharmacy) =>
-        extractMunicipality(pharmacy.address, pharmacy.prefecture) === municipalityFilter
+        municipalityMatches(
+          extractMunicipality(pharmacy.address, pharmacy.prefecture),
+          municipalityFilter,
+        )
       );
     }
 
@@ -239,11 +242,11 @@ export function usePharmacies(
       return a.name.localeCompare(b.name, 'ja');
     };
 
-    const groupByMunicipality = Boolean(
-      !searchParams.query &&
-      !municipalityFilter && (
-        fallback === 'prefecture' || (!userLocation && !!searchParams.prefecture)
-      )
+    const groupByMunicipality = shouldGroupPharmaciesByMunicipality(
+      searchParams.query,
+      municipalityFilter,
+      municipalityCounts,
+      fallback === 'prefecture' || (!userLocation && !!searchParams.prefecture),
     );
 
     if (userLocation && !groupByMunicipality) {

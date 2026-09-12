@@ -23,7 +23,7 @@ import { isAfterHoursJst } from './utils/pharmacyAvailability';
 import { inferPrefecture } from './utils/prefectureFromLocation';
 import { matchKnownMunicipality } from './utils/reverseMunicipality';
 import { shortMunicipalityLabel } from './utils/municipalityRank';
-import { extractMunicipality } from './utils/municipality';
+import { shouldGroupPharmaciesByMunicipality } from './utils/municipality';
 import { isLikelyInJapan } from './utils/japanBounds';
 import {
   DEFAULT_RADIUS,
@@ -184,17 +184,14 @@ function App() {
     )).length,
     [pharmacies]
   );
-  const groupByMunicipality = Boolean(
-    !searchParams.query &&
-    !searchParams.municipality && (
-      locationSearch.fallback === 'prefecture'
-      || (!userLocation && !!searchParams.prefecture)
-    )
+  const groupByMunicipality = shouldGroupPharmaciesByMunicipality(
+    searchParams.query,
+    selectedMunicipality,
+    municipalityCounts,
+    locationSearch.fallback === 'prefecture'
+      || (!userLocation && !!searchParams.prefecture),
   );
-  const leadingCity = groupByMunicipality && pharmacies[0]
-    ? extractMunicipality(pharmacies[0].address, pharmacies[0].prefecture)
-    : null;
-  const chipPreferred = preferredCity || leadingCity;
+  const chipPreferred = preferredCity;
   const showMunicipalityChips = Boolean(
     (searchParams.prefecture || userLocation) &&
     (!userLocation || inferredMunicipalityState.ready) &&

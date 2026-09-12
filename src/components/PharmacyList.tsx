@@ -182,7 +182,7 @@ export function PharmacyList({
               )}
               {showHeader && (
                 <p className="text-sm font-medium text-gray-500 px-1 pb-1.5 scroll-mt-28 md:scroll-mt-44">
-                  {shortMunicipalityLabel(city ?? 'その他', preferredMunicipality)}
+                  {shortMunicipalityLabel(city ?? 'その他', activeMunicipality || preferredMunicipality)}
                   {preferredMunicipality === city ? ' · 現在地付近' : ''}
                 </p>
               )}
