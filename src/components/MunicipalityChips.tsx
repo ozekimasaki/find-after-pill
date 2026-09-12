@@ -16,12 +16,13 @@ function pickPreview(
   cities: Array<[string, number]>,
   selected?: string,
   preferred?: string | null,
+  limit = PREVIEW_COUNT,
 ): Array<[string, number]> {
   const picked: Array<[string, number]> = [];
   const used = new Set<string>();
 
   const add = (entry: [string, number] | undefined) => {
-    if (!entry || used.has(entry[0]) || picked.length >= PREVIEW_COUNT) {
+    if (!entry || used.has(entry[0]) || picked.length >= limit) {
       return;
     }
     used.add(entry[0]);
@@ -53,7 +54,8 @@ export function MunicipalityChips({
     return null;
   }
 
-  const visible = expanded ? cities : pickPreview(cities, selected, preferred);
+  const previewLimit = moreLabel && selected ? 2 : PREVIEW_COUNT;
+  const visible = expanded ? cities : pickPreview(cities, selected, preferred, previewLimit);
   const hiddenCount = Math.max(0, cities.length - visible.length);
 
   return (
@@ -86,22 +88,22 @@ export function MunicipalityChips({
             </button>
           );
         })}
-        {cities.length > PREVIEW_COUNT && (
+        {moreLabel && selected && onClearSelection && (
+          <button
+            type="button"
+            onClick={onClearSelection}
+            className="inline-flex items-center px-2 py-0.5 text-xs sm:text-sm text-[#4AA8D9] rounded-full whitespace-nowrap hover:bg-[#EBF6FC]"
+          >
+            {moreLabel}
+          </button>
+        )}
+        {(hiddenCount > 0 || expanded) && (
           <button
             type="button"
             onClick={() => setExpanded((current) => !current)}
             className="inline-flex items-center px-2 py-0.5 text-xs sm:text-sm text-[#4AA8D9] rounded-full border border-transparent hover:bg-[#EBF6FC]"
           >
             {expanded ? 'とじる' : `ほか${hiddenCount}`}
-          </button>
-        )}
-        {moreLabel && selected && onClearSelection && (
-          <button
-            type="button"
-            onClick={onClearSelection}
-            className="inline-flex items-center px-2 py-0.5 text-xs sm:text-sm text-[#4AA8D9] rounded-full hover:bg-[#EBF6FC]"
-          >
-            {moreLabel}
           </button>
         )}
       </div>
