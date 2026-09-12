@@ -506,10 +506,10 @@ function App() {
           className="min-w-0 flex-1 text-sm text-gray-600 transition-opacity duration-200 scroll-mt-28 md:scroll-mt-44"
           aria-live="polite"
         >
-          {listLoading ? (
-            <span className="text-gray-400">お近くの薬局を探しています...</span>
-          ) : !hasSearchScope ? (
+          {!hasSearchScope ? (
             <span className="sr-only">現在地か都道府県を選んでください</span>
+          ) : listLoading ? (
+            <span className="text-gray-400">お近くの薬局を探しています...</span>
           ) : selectedMunicipality ? (
             <span>
               <strong className="text-gray-900">{shortMunicipalityLabel(selectedMunicipality, preferredCity || selectedMunicipality)}</strong>
