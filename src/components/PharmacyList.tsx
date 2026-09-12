@@ -165,7 +165,11 @@ export function PharmacyList({
           const previousCity = groupByMunicipality && previous
             ? (extractMunicipality(previous.address, previous.prefecture) ?? 'その他')
             : null;
-          const showHeader = Boolean(city && city !== previousCity);
+          const isNewGroup = Boolean(city && city !== previousCity);
+          // 先頭グループは市区チップと重複するので見出しを出さない
+          const showHeader = Boolean(isNewGroup && index > 0);
+          const cardMunicipality = activeMunicipality
+            ?? (city && city !== 'その他' ? city : undefined);
 
           return (
             <div
@@ -173,6 +177,9 @@ export function PharmacyList({
               className="animate-fadeIn scroll-mt-28 md:scroll-mt-44"
               style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
             >
+              {isNewGroup && index === 0 && city && (
+                <p className="sr-only">{city}</p>
+              )}
               {showHeader && (
                 <p className="text-sm font-medium text-gray-500 px-1 pb-1.5 scroll-mt-28 md:scroll-mt-44">
                   {shortMunicipalityLabel(city ?? 'その他', preferredMunicipality)}
@@ -183,7 +190,7 @@ export function PharmacyList({
                 pharmacy={pharmacy}
                 onClick={() => onSelectPharmacy(pharmacy)}
                 hasUserLocation={showUnmeasuredDistance}
-                activeMunicipality={activeMunicipality}
+                activeMunicipality={cardMunicipality}
               />
             </div>
           );

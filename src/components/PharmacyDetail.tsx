@@ -140,7 +140,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
 
   // Share / Copy
   const handleShare = async () => {
-    const shareText = `${pharmacy.name}\n${formatPharmacyAddress(pharmacy.address)}\n${pharmacy.phone ? formatPhoneDisplay(pharmacy.phone) : ''}`.trim();
+    const shareText = `${pharmacy.name}\n${formatPharmacyAddress(pharmacy.address, pharmacy.prefecture)}\n${pharmacy.phone ? formatPhoneDisplay(pharmacy.phone) : ''}`.trim();
     if (navigator.share) {
       try {
         await navigator.share({ text: shareText });
@@ -222,7 +222,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
               label="住所"
               value={
                 <span className="inline-block w-fit max-w-full break-words">
-                  {formatPharmacyAddress(pharmacy.address)}
+                  {formatPharmacyAddress(pharmacy.address, pharmacy.prefecture)}
                 </span>
               }
             />
