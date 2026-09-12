@@ -201,6 +201,7 @@ function App() {
     Object.keys(municipalityCounts).length >= 2
   );
   const hideResultCount = Boolean(
+    extraFilterCount === 0 &&
     !listLoading &&
     !searchParams.query &&
     showMunicipalityChips && (

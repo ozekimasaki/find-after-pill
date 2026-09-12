@@ -32,7 +32,7 @@ export function PrefectureChips({
             type="button"
             onClick={() => onSelect(name)}
             aria-label={`${name} ${count.toLocaleString()}件`}
-            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+            className="inline-flex items-center gap-1 min-h-8 px-2.5 text-xs rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
           >
             {shortPrefectureName(name)}
             <span className="text-gray-400">{count.toLocaleString()}</span>

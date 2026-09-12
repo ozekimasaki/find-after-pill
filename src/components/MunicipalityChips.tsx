@@ -62,10 +62,19 @@ export function MunicipalityChips({
   const visible = expanded ? cities : pickPreview(cities, selected, preferred, previewLimit);
   const hiddenCount = Math.max(0, cities.length - visible.length);
 
+  const chipClass = (isActive: boolean, isPreferred: boolean) =>
+    `inline-flex items-center gap-1 min-h-8 px-2.5 text-xs sm:text-sm rounded-full border whitespace-nowrap ${
+      isActive
+        ? 'bg-[#65BBE9] text-white border-transparent'
+        : isPreferred
+          ? 'bg-[#EBF6FC] text-gray-800 border-[#65BBE9]'
+          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+    }`;
+
   return (
     <div className="mb-1.5">
       <p className="sr-only">市区町村で絞り込む</p>
-      <div className="flex flex-wrap gap-1.5">
+      <div className={`flex flex-wrap gap-1.5 ${expanded ? 'max-h-20 overflow-y-auto overscroll-y-contain' : ''}`}>
         {leading}
         {visible.map(([name, count]) => {
           const isActive = selected === name;
@@ -74,17 +83,14 @@ export function MunicipalityChips({
               key={name}
               type="button"
               onMouseDown={(event) => event.preventDefault()}
-              onClick={() => onSelect(name)}
+              onClick={() => {
+                setExpanded(false);
+                onSelect(name);
+              }}
               aria-pressed={isActive}
               aria-current={preferred === name ? 'true' : undefined}
               aria-label={`${name} ${count.toLocaleString()}件`}
-              className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs sm:text-sm rounded-full border whitespace-nowrap ${
-                isActive
-                  ? 'bg-[#65BBE9] text-white border-transparent'
-                  : preferred === name
-                    ? 'bg-[#EBF6FC] text-gray-800 border-[#65BBE9]'
-                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
+              className={chipClass(isActive, preferred === name)}
             >
               {shortMunicipalityLabel(name, preferred)}
               <span className={isActive ? 'text-white/90' : 'text-gray-400'}>
@@ -97,21 +103,30 @@ export function MunicipalityChips({
           <button
             type="button"
             onClick={onClearSelection}
-            className="inline-flex items-center px-2 py-0.5 text-xs sm:text-sm text-[#4AA8D9] rounded-full whitespace-nowrap hover:bg-[#EBF6FC]"
+            className="inline-flex items-center min-h-8 px-2.5 text-xs sm:text-sm text-[#4AA8D9] rounded-full whitespace-nowrap hover:bg-[#EBF6FC]"
           >
             {moreLabel}
           </button>
         )}
-        {(hiddenCount > 0 || expanded) && (
+        {!expanded && hiddenCount > 0 && (
           <button
             type="button"
-            onClick={() => setExpanded((current) => !current)}
-            className="inline-flex items-center px-2 py-0.5 text-xs sm:text-sm text-[#4AA8D9] rounded-full border border-transparent hover:bg-[#EBF6FC]"
+            onClick={() => setExpanded(true)}
+            className="inline-flex items-center min-h-8 px-2.5 text-xs sm:text-sm text-[#4AA8D9] rounded-full border border-transparent hover:bg-[#EBF6FC]"
           >
-            {expanded ? 'とじる' : `ほか${hiddenCount}`}
+            {`ほか${hiddenCount}`}
           </button>
         )}
       </div>
+      {expanded && (
+        <button
+          type="button"
+          onClick={() => setExpanded(false)}
+          className="mt-1 inline-flex items-center min-h-8 px-2.5 text-xs sm:text-sm text-[#4AA8D9] rounded-full hover:bg-[#EBF6FC]"
+        >
+          とじる
+        </button>
+      )}
     </div>
   );
 }
