@@ -11,6 +11,7 @@ import { Map } from './components/Map';
 import { FAQ } from './components/FAQ';
 import { PharmacyDetail } from './components/PharmacyDetail';
 import { MunicipalityChips } from './components/MunicipalityChips';
+import { PrefectureChips } from './components/PrefectureChips';
 import { FilterToggleButton } from './components/FilterToggleButton';
 import { SearchToggleButton } from './components/SearchToggleButton';
 import { useGeolocation } from './hooks/useGeolocation';
@@ -433,6 +434,7 @@ function App() {
                   <SearchToggleButton
                     open={searchOpen}
                     active={Boolean(queryInput)}
+                    labeled
                     onClick={() => setSearchOpen((current) => !current)}
                   />
                 </div>
@@ -449,9 +451,29 @@ function App() {
                     autoFocus={searchOpen}
                   />
                 )}
+                <PrefectureChips
+                  counts={prefectureCounts}
+                  onSelect={handlePrefectureChange}
+                />
               </div>
             )}
           </div>
+        )}
+        {!hasSearchScope && !userLocation && (
+          <ol className="md:hidden mt-4 mb-1 grid grid-cols-3 gap-1 text-center">
+            <li>
+              <p className="text-[#4AA8D9] text-xs font-medium">1</p>
+              <p className="text-xs text-gray-500">場所を選ぶ</p>
+            </li>
+            <li>
+              <p className="text-[#4AA8D9] text-xs font-medium">2</p>
+              <p className="text-xs text-gray-500">電話する</p>
+            </li>
+            <li>
+              <p className="text-[#4AA8D9] text-xs font-medium">3</p>
+              <p className="text-xs text-gray-500">薬局で服用</p>
+            </li>
+          </ol>
         )}
 
         <div

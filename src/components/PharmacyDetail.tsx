@@ -236,7 +236,12 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
                         : pharmacy.businessHours.normalize('NFKC')}
                     </p>
                     {showRawHours && (
-                      <p className="mt-1 text-sm text-gray-500">{rawHours}</p>
+                      <details className="mt-1">
+                        <summary className="text-sm text-[#4AA8D9] cursor-pointer">
+                          すべての開局時間
+                        </summary>
+                        <p className="mt-1 text-sm text-gray-500">{rawHours}</p>
+                      </details>
                     )}
                   </div>
                 }
@@ -268,28 +273,19 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
             )}
           </div>
 
-          {/* 案内ボックス */}
-          <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
+          <div className="mt-4 p-3 bg-[#EBF6FC] border border-[#65BBE9]/30 rounded-lg">
+            <p className="text-sm text-gray-800">
               <strong>訪問前に電話するとスムーズです</strong>
             </p>
-            <p className="text-sm text-blue-700 mt-1">
-              在庫の確認や、到着時間を伝えておくと安心です。薬剤師が丁寧に対応してくれます。
-            </p>
-          </div>
-
-          {/* 行動ガイド */}
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm font-medium text-gray-700 mb-2">この薬局に行くまでの流れ</p>
-            <ol className="text-sm text-gray-600 space-y-1.5 list-decimal list-inside">
+            <ol className="mt-1.5 text-sm text-gray-600 space-y-0.5 list-decimal list-inside">
               <li>電話で在庫を確認する</li>
-              <li>本人確認書類（免許証・マイナンバーカード等）を持参</li>
-              <li>薬剤師の説明を受けて、その場で服用</li>
+              <li>本人確認書類を持参する</li>
+              <li>薬剤師の説明を受けて、その場で服用する</li>
             </ol>
           </div>
 
           {/* アクションボタン */}
-          <div className="mt-6 grid grid-cols-2 gap-3">
+          <div className="mt-4 grid grid-cols-2 gap-3">
             <a
               href={googleMapsUrl}
               target="_blank"
