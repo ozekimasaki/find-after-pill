@@ -56,7 +56,9 @@ export function MunicipalityChips({
     return null;
   }
 
-  const previewLimit = moreLabel && selected ? 2 : (leading ? 2 : PREVIEW_COUNT);
+  const previewLimit = leading
+    ? (moreLabel && selected ? 1 : 2)
+    : (moreLabel && selected ? 2 : PREVIEW_COUNT);
   const visible = expanded ? cities : pickPreview(cities, selected, preferred, previewLimit);
   const hiddenCount = Math.max(0, cities.length - visible.length);
 
