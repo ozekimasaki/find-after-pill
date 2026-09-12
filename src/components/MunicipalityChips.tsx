@@ -62,8 +62,8 @@ export function MunicipalityChips({
             {cities.map(([name, count]) => {
               const isActive = selected === name;
               return (
+                <span key={name} className="contents">
                 <button
-                  key={name}
                   type="button"
                   ref={isActive ? selectedRef : undefined}
                   onMouseDown={(event) => event.preventDefault()}
@@ -78,9 +78,19 @@ export function MunicipalityChips({
                     {count.toLocaleString()}
                   </span>
                 </button>
+                {isActive && moreLabel && onClearSelection && (
+                  <button
+                    type="button"
+                    onClick={onClearSelection}
+                    className="inline-flex shrink-0 items-center min-h-8 px-2.5 text-xs sm:text-sm text-[#4AA8D9] rounded-full whitespace-nowrap hover:bg-[#EBF6FC]"
+                  >
+                    {moreLabel}
+                  </button>
+                )}
+                </span>
               );
             })}
-            {moreLabel && selected && onClearSelection && (
+            {moreLabel && selected && onClearSelection && !cities.some(([name]) => name === selected) && (
               <button
                 type="button"
                 onClick={onClearSelection}
