@@ -41,7 +41,6 @@ function App() {
   const [queryInput, setQueryInput] = useState(urlInit.searchParams.query ?? '');
   const [searchOpen, setSearchOpen] = useState(Boolean(urlInit.searchParams.query));
   const [showBackToTop, setShowBackToTop] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [filtersPinned, setFiltersPinned] = useState(false);
   const [selectedPharmacy, setSelectedPharmacy] = useState<PharmacyWithDistance | null>(null);
   const [hoursTouched, setHoursTouched] = useState(urlInit.hasExplicitHours);
@@ -156,7 +155,7 @@ function App() {
     searchParams.query ||
     searchParams.municipality
   );
-  const extrasOpen = filtersPinned || (!scrolled && !userLocation && hasSearchScope);
+  const extrasOpen = filtersPinned;
   const nextRadius = RADIUS_OPTIONS.find((option) => option > radius);
   const hasActiveFilters = Boolean(
     searchParams.query ||
@@ -317,7 +316,6 @@ function App() {
     const handleScroll = () => {
       const y = window.scrollY;
       setShowBackToTop(y > 400);
-      setScrolled(y > 80);
       if (y > 80) {
         setFiltersPinned(false);
       }
@@ -436,6 +434,13 @@ function App() {
                     active={Boolean(queryInput)}
                     onClick={() => setSearchOpen((current) => !current)}
                   />
+                  {hasSearchScope && (
+                    <FilterToggleButton
+                      open={extrasOpen}
+                      count={extraFilterCount}
+                      onClick={() => setFiltersPinned((current) => !current)}
+                    />
+                  )}
                 </div>
               )}
               {userLocation && (
