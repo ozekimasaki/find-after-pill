@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { PharmacyWithDistance } from '../types/pharmacy';
 import { formatDistance } from '../utils/distance';
-import { isLikelyOpenNow } from '../utils/pharmacyAvailability';
+import { formatTodayHours, isLikelyOpenNow } from '../utils/pharmacyAvailability';
 import { toTelHref, formatPhoneDisplay } from '../utils/phone';
 import { formatPharmacyAddress } from '../utils/formatAddress';
 
@@ -33,6 +33,7 @@ function DetailRow({ icon, label, value }: DetailRowProps) {
 export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
   const [copied, setCopied] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number | null>(null);
 
   const getGoogleMapsRouteUrl = () => {
@@ -53,6 +54,8 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
   const appleMapsUrl = getAppleMapsRouteUrl();
   const titleId = 'pharmacy-detail-title';
   const likelyOpen = isLikelyOpenNow(pharmacy.businessHours);
+  const todayHours = formatTodayHours(pharmacy.businessHours);
+  const compactHours = todayHours.split('/')[0]?.trim() || todayHours;
 
   const normalizeUrl = (url: string): string => {
     if (!url) return '';
@@ -111,7 +114,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
 
   // Swipe down to close (mobile)
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (scrollRef.current && scrollRef.current.scrollTop === 0) {
+    if (contentRef.current && contentRef.current.scrollTop === 0) {
       touchStartY.current = e.touches[0].clientY;
     } else {
       touchStartY.current = null;
@@ -155,15 +158,13 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
       {/* Modal */}
       <div
         ref={scrollRef}
-        className="relative w-full h-[100dvh] sm:h-auto sm:max-w-lg bg-white sm:rounded-2xl shadow-xl sm:max-h-[92dvh] overflow-auto animate-slideUp sm:animate-fadeInScale pb-[env(safe-area-inset-bottom)] isolate"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+        className="relative w-full h-[100dvh] sm:h-auto sm:max-w-lg bg-white sm:rounded-2xl shadow-xl sm:max-h-[92dvh] flex flex-col overflow-hidden animate-slideUp sm:animate-fadeInScale pb-[env(safe-area-inset-bottom)] isolate"
       >
         {/* Drag handle (mobile) */}
-        <div className="sm:hidden w-10 h-1 bg-gray-300 rounded-full mx-auto mt-2 mb-1" />
+        <div className="sm:hidden w-10 h-1 bg-gray-300 rounded-full mx-auto mt-2 mb-1 shrink-0" />
 
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
+        <div className="shrink-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
           <h2 className="text-lg font-bold text-gray-900">薬局詳細</h2>
           <button
             type="button"
@@ -178,6 +179,12 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
         </div>
 
         {/* Content */}
+        <div
+          ref={contentRef}
+          className="flex-1 min-h-0 overflow-auto"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
         <div className="p-4">
           {/* 薬局名と距離 */}
           <div className="flex items-start justify-between gap-2">
@@ -237,7 +244,18 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
                   </svg>
                 }
                 label="開局時間"
-                value={pharmacy.businessHours.normalize('NFKC')}
+                value={
+                  <div>
+                    <p>
+                      {compactHours
+                        ? (likelyOpen ? `本日 ${compactHours}（開局中の目安）` : compactHours)
+                        : pharmacy.businessHours.normalize('NFKC')}
+                    </p>
+                    {pharmacy.businessHours.normalize('NFKC') !== compactHours && compactHours && (
+                      <p className="mt-1 text-sm text-gray-500">{pharmacy.businessHours.normalize('NFKC')}</p>
+                    )}
+                  </div>
+                }
               />
             )}
 
@@ -427,22 +445,23 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
             </svg>
             {copied ? 'コピーしました' : '共有する'}
           </button>
+        </div>
+        </div>
 
-          {pharmacy.phone && (
+        {pharmacy.phone && (
+          <div className="shrink-0 border-t border-gray-200 bg-white px-4 py-3">
             <a
               href={toTelHref(pharmacy.phone)}
-              className="mt-3 flex flex-col items-center justify-center gap-0.5 w-full px-4 py-3 bg-[#65BBE9] text-white rounded-lg hover:bg-[#4AA8D9] transition-colors"
+              className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#65BBE9] text-white rounded-lg hover:bg-[#4AA8D9] transition-colors"
             >
-              <span className="inline-flex items-center gap-2 font-medium">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-                電話する
-              </span>
-              <span className="text-sm font-normal tracking-wide">{formatPhoneDisplay(pharmacy.phone)}</span>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              <span className="text-sm font-medium">電話する</span>
+              <span className="text-sm tracking-wide">{formatPhoneDisplay(pharmacy.phone)}</span>
             </a>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

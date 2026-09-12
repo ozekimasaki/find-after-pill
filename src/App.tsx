@@ -167,7 +167,7 @@ function App() {
     searchParams.hasPrivateSpace ||
     searchParams.openNowOnly
   );
-  const showSearchBar = !userLocation || searchOpen;
+  const showSearchBar = searchOpen || Boolean(queryInput.trim());
   const showStickyRadius = Boolean(
     userLocation &&
     locationSearch.fallback !== 'prefecture' &&
@@ -377,6 +377,22 @@ function App() {
           className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 py-1 mb-2 border-b border-gray-100"
         >
             <div className="bg-white rounded-xl shadow-sm p-2 md:p-3">
+              {!userLocation && (
+                <div className={`flex items-center gap-2 md:hidden ${showSearchBar ? 'mb-2' : ''}`}>
+                  <div className="min-w-0 flex-1">
+                    <PrefectureFilter
+                      value={searchParams.prefecture || ''}
+                      onChange={handlePrefectureChange}
+                      counts={prefectureCounts}
+                    />
+                  </div>
+                  <SearchToggleButton
+                    open={searchOpen}
+                    active={Boolean(queryInput)}
+                    onClick={() => setSearchOpen((current) => !current)}
+                  />
+                </div>
+              )}
               {userLocation && (
                 <div className={`flex items-center gap-1 text-xs text-gray-500 ${showSearchBar || extrasOpen ? 'mb-1.5' : ''} md:mb-1.5`}>
                   <span className="min-w-0 truncate">
@@ -435,11 +451,12 @@ function App() {
                         setSearchOpen(true);
                       }
                     }}
-                    autoFocus={Boolean(userLocation && searchOpen)}
+                    autoFocus={searchOpen}
                   />
                 </div>
-                <div className={`w-[9.25rem] shrink-0 md:w-auto ${userLocation ? 'hidden md:block' : ''}`}>
+                <div className="w-[9.25rem] shrink-0 md:w-auto hidden md:block">
                   <PrefectureFilter
+                    selectId="prefecture-select-desktop"
                     value={searchParams.prefecture || ''}
                     onChange={handlePrefectureChange}
                     counts={prefectureCounts}
@@ -676,7 +693,7 @@ function App() {
           </div>
         )}
 
-        <FAQ />
+        <FAQ preview={!hasSearchScope} />
       </main>
 
       <Footer />

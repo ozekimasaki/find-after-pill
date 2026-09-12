@@ -43,12 +43,37 @@ const faqItems: FAQItem[] = [
   },
 ];
 
-export function FAQ() {
+interface FAQProps {
+  preview?: boolean;
+}
+
+export function FAQ({ preview = false }: FAQProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [revealed, setRevealed] = useState(!preview);
 
   const toggle = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
+
+  if (preview && !revealed) {
+    return (
+      <section id="faq" className="bg-white rounded-xl shadow-sm px-4 py-3 mt-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-sm font-bold text-gray-800">よくある質問</h2>
+            <p className="text-xs text-gray-500 mt-0.5">値段・飲み方・年齢など</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setRevealed(true)}
+            className="shrink-0 text-sm text-[#4AA8D9] hover:underline"
+          >
+            見る
+          </button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="faq" className="bg-white rounded-xl shadow-sm p-6 mt-6">
