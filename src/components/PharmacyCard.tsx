@@ -37,10 +37,6 @@ export function PharmacyCard({
     }
   };
 
-  const hoursLabel = pharmacy.businessHours
-    ? (likelyOpen ? `開局中 ${compactHours}` : compactHours)
-    : (likelyOpen ? '開局中' : null);
-
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2 hover:shadow-md transition-shadow">
       <div
@@ -70,31 +66,23 @@ export function PharmacyCard({
           </span>
         </div>
 
-        <p className="mt-0.5 text-gray-600 text-sm leading-snug truncate">
-          {formatPharmacyAddress(pharmacy.address, pharmacy.prefecture, activeMunicipality)}
-        </p>
-
-        <div className="mt-1 flex flex-wrap gap-1.5">
-          {hoursLabel && (
-            <span className={`inline-flex items-center px-1.5 py-0.5 text-xs rounded ${
-              closedToday
-                ? 'bg-gray-100 text-gray-600'
-                : 'bg-[#EBF6FC] text-[#4AA8D9]'
-            }`}>
-              {hoursLabel}
-            </span>
+        <p className="mt-0.5 text-sm leading-snug truncate">
+          {likelyOpen && !closedToday && (
+            <span className="text-[#4AA8D9]">開局中 · </span>
+          )}
+          <span className="text-gray-600">
+            {formatPharmacyAddress(pharmacy.address, pharmacy.prefecture, activeMunicipality)}
+          </span>
+          {pharmacy.businessHours && compactHours && (
+            <span className="text-gray-500"> · {compactHours}</span>
           )}
           {pharmacy.advanceCallRequired === '要' && (
-            <span className="inline-flex items-center px-1.5 py-0.5 text-xs bg-amber-50 text-amber-700 rounded">
-              要事前連絡
-            </span>
+            <span className="text-amber-700"> · 要事前連絡</span>
           )}
           {pharmacy.pharmacistFemale !== undefined && pharmacy.pharmacistFemale > 0 && (
-            <span className="inline-flex items-center px-1.5 py-0.5 text-xs bg-[#EBF6FC] text-[#4AA8D9] rounded">
-              女性薬剤師
-            </span>
+            <span className="text-gray-500"> · 女性薬剤師</span>
           )}
-        </div>
+        </p>
       </div>
 
       {pharmacy.phone && (
