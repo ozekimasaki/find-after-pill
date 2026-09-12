@@ -413,9 +413,14 @@ function App() {
         {!userLocation && (
           <div className={`bg-white rounded-xl shadow-sm p-3 mb-2 ${hasSearchScope ? 'hidden md:block' : ''}`}>
             {!locationLoading && (
-              <p className="text-sm text-gray-600 mb-2 text-center">
-                処方箋なしで購入できます
-              </p>
+              <>
+                <p className="text-sm text-gray-600 text-center">
+                  処方箋なしで購入できます
+                </p>
+                <p className="text-xs text-gray-400 mb-2 text-center">
+                  性交後72時間以内 · 16歳以上
+                </p>
+              </>
             )}
             <LocationButton
               onClick={handleGetCurrentLocation}

@@ -61,9 +61,6 @@ export function PharmacyCard({
               距離未計測
             </span>
           )}
-          <span className="shrink-0 text-gray-300 text-lg leading-none" aria-hidden="true">
-            ›
-          </span>
         </div>
 
         <p className="mt-0.5 flex items-baseline min-w-0 text-sm leading-snug">
@@ -81,7 +78,7 @@ export function PharmacyCard({
           )}
           {pharmacy.advanceCallRequired === '要' && (
             <>
-              <span className="shrink-0 text-amber-700">要事前連絡</span>
+              <span className="shrink-0 text-gray-600">要事前連絡</span>
               <span className="shrink-0 text-gray-300 px-1" aria-hidden="true">·</span>
             </>
           )}

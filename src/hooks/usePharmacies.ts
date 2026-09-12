@@ -95,7 +95,7 @@ export function usePharmacies(
   }, []);
 
   // フィルタリング・ソート済みの薬局リスト
-  const { pharmacies, locationSearch } = useMemo(() => {
+  const { pharmacies, locationSearch, municipalityCounts } = useMemo(() => {
     let filtered = [...allPharmacies];
     const skipPrefectureFilter = Boolean(
       userLocation && searchParams.radius && searchParams.prefectureIsHint
@@ -129,12 +129,6 @@ export function usePharmacies(
       : (searchParams.municipality === undefined && !searchParams.query
         ? matchedPreferred
         : null);
-
-    if (municipalityFilter) {
-      filtered = filtered.filter((p) =>
-        extractMunicipality(p.address, p.prefecture) === municipalityFilter
-      );
-    }
 
     // フリーワード検索（ひらがな/カタカナ・電話番号も対象）
     if (searchParams.query) {
@@ -218,6 +212,20 @@ export function usePharmacies(
       nearbyCount = withDistance.filter(p => p.distance !== undefined).length;
     }
 
+    const municipalityCounts: Record<string, number> = {};
+    for (const pharmacy of result) {
+      const city = extractMunicipality(pharmacy.address, pharmacy.prefecture);
+      if (city) {
+        municipalityCounts[city] = (municipalityCounts[city] || 0) + 1;
+      }
+    }
+
+    if (municipalityFilter) {
+      result = result.filter((pharmacy) =>
+        extractMunicipality(pharmacy.address, pharmacy.prefecture) === municipalityFilter
+      );
+    }
+
     const openIds = new Set(
       result.filter(p => isLikelyOpenNow(p.businessHours)).map(p => p.id)
     );
@@ -282,6 +290,7 @@ export function usePharmacies(
 
     return {
       pharmacies: result,
+      municipalityCounts,
       locationSearch: {
         nearbyCount,
         fallback,
@@ -299,25 +308,6 @@ export function usePharmacies(
     }
     return counts;
   }, [allPharmacies]);
-
-  const municipalityCounts = useMemo(() => {
-    const targetPref = searchParams.prefecture
-      || (userLocation ? inferPrefecture(userLocation.lat, userLocation.lng) : null);
-    if (!targetPref) {
-      return {};
-    }
-    const counts: Record<string, number> = {};
-    for (const pharmacy of allPharmacies) {
-      if (pharmacy.prefecture !== targetPref) {
-        continue;
-      }
-      const city = extractMunicipality(pharmacy.address, pharmacy.prefecture);
-      if (city) {
-        counts[city] = (counts[city] || 0) + 1;
-      }
-    }
-    return counts;
-  }, [allPharmacies, searchParams.prefecture, userLocation]);
 
   return {
     pharmacies,
