@@ -21,6 +21,7 @@ import { isAfterHoursJst } from './utils/pharmacyAvailability';
 import { inferPrefecture } from './utils/prefectureFromLocation';
 import { matchKnownMunicipality } from './utils/reverseMunicipality';
 import { shortMunicipalityLabel } from './utils/municipalityRank';
+import { extractMunicipality } from './utils/municipality';
 import { isLikelyInJapan } from './utils/japanBounds';
 import {
   DEFAULT_RADIUS,
@@ -181,6 +182,31 @@ function App() {
     )).length,
     [pharmacies]
   );
+  const groupByMunicipality = Boolean(
+    !searchParams.query &&
+    !searchParams.municipality && (
+      locationSearch.fallback === 'prefecture'
+      || (!userLocation && !!searchParams.prefecture)
+    )
+  );
+  const leadingCity = groupByMunicipality && pharmacies[0]
+    ? extractMunicipality(pharmacies[0].address, pharmacies[0].prefecture)
+    : null;
+  const chipPreferred = preferredCity || leadingCity;
+  const showMunicipalityChips = Boolean(
+    (searchParams.prefecture || userLocation) &&
+    (!userLocation || inferredMunicipalityState.ready) &&
+    Object.keys(municipalityCounts).length >= 2
+  );
+  const hideResultCount = Boolean(
+    !listLoading &&
+    !searchParams.query &&
+    showMunicipalityChips && (
+      (!userLocation && searchParams.prefecture && !selectedMunicipality) ||
+      (selectedMunicipality && !(userLocation && searchParams.radius && locationSearch.fallback === 'none'))
+    )
+  );
+  const prefectureForClear = searchParams.prefecture || locationSearch.prefecture;
 
   const handlePrefectureChange = useCallback((prefecture: string) => {
     userFilterRef.current = true;
@@ -571,28 +597,39 @@ function App() {
           <p className="text-sm text-[#4AA8D9] px-1 mb-2">{locationError}</p>
         )}
 
-        <div className={`flex items-center gap-2 ${hasSearchScope ? 'mb-1.5' : ''}`}>
         <div
           id="results"
           ref={resultAreaRef}
-          className="min-w-0 flex-1 text-sm text-gray-600 transition-opacity duration-200 scroll-mt-28 md:scroll-mt-44"
+          className="scroll-mt-28 md:scroll-mt-44"
+        >
+        {hasSearchScope && !listLoading && (
+          <p className="sr-only">
+            {selectedMunicipality
+              ? `${shortMunicipalityLabel(selectedMunicipality, preferredCity || selectedMunicipality)} ${pharmacies.length.toLocaleString()}件`
+              : searchParams.prefecture
+                ? `${searchParams.prefecture} ${pharmacies.length.toLocaleString()}件`
+                : `全国 ${pharmacies.length.toLocaleString()}件`}
+          </p>
+        )}
+        {(hasSearchScope && (listLoading || !hideResultCount || mappableCount > 0)) ? (
+        <div className="flex items-center gap-2 mb-1.5">
+        <div
+          className="min-w-0 flex-1 text-sm text-gray-600 transition-opacity duration-200"
           aria-live="polite"
         >
-          {!hasSearchScope ? (
-            <span className="sr-only">現在地か都道府県を選んでください</span>
-          ) : listLoading ? (
+          {listLoading ? (
             <span className="text-gray-400">お近くの薬局を探しています...</span>
-          ) : selectedMunicipality ? (
+          ) : hideResultCount ? null : selectedMunicipality ? (
             <span>
               <strong className="text-gray-900">{shortMunicipalityLabel(selectedMunicipality, preferredCity || selectedMunicipality)}</strong>
               {' '}<strong className="text-gray-900">{pharmacies.length.toLocaleString()}</strong>件
-              {(searchParams.prefecture || locationSearch.prefecture) && (
+              {prefectureForClear && (
                 <button
                   type="button"
                   onClick={handleClearMunicipality}
                   className="ml-1.5 text-[#4AA8D9] hover:underline"
                 >
-                  {searchParams.prefecture || locationSearch.prefecture}も見る
+                  {prefectureForClear}も見る
                 </button>
               )}
             </span>
@@ -659,7 +696,9 @@ function App() {
         </nav>
         )}
         </div>
-
+        ) : !hasSearchScope ? (
+          <p className="sr-only">現在地か都道府県を選んでください</p>
+        ) : null}
         {hasSearchScope && wasAutoEnabled && searchParams.afterHoursOnly && (
           <p className="text-xs text-gray-400 flex items-center gap-1 px-1 mb-2">
             <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -693,14 +732,18 @@ function App() {
           </div>
         )}
 
-        {viewMode === 'list'
-          && (searchParams.prefecture || userLocation)
-          && (!userLocation || inferredMunicipalityState.ready) && (
+        {viewMode === 'list' && showMunicipalityChips && (
           <MunicipalityChips
             counts={municipalityCounts}
             selected={selectedMunicipality}
-            preferred={preferredCity}
+            preferred={chipPreferred}
             onSelect={handleMunicipalitySelect}
+            moreLabel={
+              selectedMunicipality && prefectureForClear
+                ? `${prefectureForClear}も見る`
+                : undefined
+            }
+            onClearSelection={handleClearMunicipality}
           />
         )}
 
@@ -715,13 +758,7 @@ function App() {
             onResetFilters={handleResetFilters}
             onRetry={refetch}
             onSelectPharmacy={setSelectedPharmacy}
-            groupByMunicipality={
-              !searchParams.query &&
-              !searchParams.municipality && (
-                locationSearch.fallback === 'prefecture'
-                || (!userLocation && !!searchParams.prefecture)
-              )
-            }
+            groupByMunicipality={groupByMunicipality}
             preferredMunicipality={preferredCity}
             activeMunicipality={selectedMunicipality}
             showUnmeasuredDistance={
@@ -748,6 +785,7 @@ function App() {
             />
           </div>
         )}
+        </div>
 
         <FAQ preview={!hasSearchScope} />
       </main>

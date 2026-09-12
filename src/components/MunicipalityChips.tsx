@@ -6,6 +6,8 @@ interface MunicipalityChipsProps {
   selected?: string;
   preferred?: string | null;
   onSelect: (municipality: string) => void;
+  moreLabel?: string;
+  onClearSelection?: () => void;
 }
 
 const PREVIEW_COUNT = 3;
@@ -39,6 +41,8 @@ export function MunicipalityChips({
   selected,
   preferred,
   onSelect,
+  moreLabel,
+  onClearSelection,
 }: MunicipalityChipsProps) {
   const [expanded, setExpanded] = useState(false);
   const cities = Object.entries(counts)
@@ -89,6 +93,15 @@ export function MunicipalityChips({
             className="inline-flex items-center px-2 py-0.5 text-xs sm:text-sm text-[#4AA8D9] rounded-full border border-transparent hover:bg-[#EBF6FC]"
           >
             {expanded ? 'とじる' : `ほか${hiddenCount}`}
+          </button>
+        )}
+        {moreLabel && selected && onClearSelection && (
+          <button
+            type="button"
+            onClick={onClearSelection}
+            className="inline-flex items-center px-2 py-0.5 text-xs sm:text-sm text-[#4AA8D9] rounded-full hover:bg-[#EBF6FC]"
+          >
+            {moreLabel}
           </button>
         )}
       </div>
