@@ -1,7 +1,11 @@
 /**
  * 厚労省データの重複した住所を1回分に畳む。
  */
-export function formatPharmacyAddress(address: string, prefecture?: string): string {
+export function formatPharmacyAddress(
+  address: string,
+  prefecture?: string,
+  municipality?: string,
+): string {
   const compact = address.normalize('NFKC').replace(/\s+/g, '');
   let folded = compact;
 
@@ -25,8 +29,12 @@ export function formatPharmacyAddress(address: string, prefecture?: string): str
     }
   }
 
-  if (prefecture && folded.startsWith(prefecture)) {
-    return folded.slice(prefecture.length);
+  let result = folded;
+  if (prefecture && result.startsWith(prefecture)) {
+    result = result.slice(prefecture.length);
   }
-  return folded;
+  if (municipality && result.startsWith(municipality)) {
+    result = result.slice(municipality.length);
+  }
+  return result || folded;
 }

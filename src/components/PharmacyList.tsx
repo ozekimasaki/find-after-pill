@@ -25,6 +25,7 @@ interface PharmacyListProps {
   showUnmeasuredDistance?: boolean;
   groupByMunicipality?: boolean;
   preferredMunicipality?: string | null;
+  activeMunicipality?: string;
   emptyActions?: PharmacyListEmptyActions;
 }
 
@@ -61,6 +62,7 @@ export function PharmacyList({
   showUnmeasuredDistance = false,
   groupByMunicipality = false,
   preferredMunicipality = null,
+  activeMunicipality,
   emptyActions,
 }: PharmacyListProps) {
   const resultKey = `${pharmacies.length}:${pharmacies[0]?.id ?? ''}:${pharmacies[pharmacies.length - 1]?.id ?? ''}`;
@@ -191,6 +193,7 @@ export function PharmacyList({
                 pharmacy={pharmacy}
                 onClick={() => onSelectPharmacy(pharmacy)}
                 hasUserLocation={showUnmeasuredDistance}
+                activeMunicipality={activeMunicipality}
               />
             </div>
           );

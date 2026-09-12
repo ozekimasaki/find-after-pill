@@ -9,12 +9,19 @@ interface PharmacyCardProps {
   pharmacy: PharmacyWithDistance;
   onClick?: () => void;
   hasUserLocation?: boolean;
+  activeMunicipality?: string;
 }
 
-export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: PharmacyCardProps) {
+export function PharmacyCard({
+  pharmacy,
+  onClick,
+  hasUserLocation = false,
+  activeMunicipality,
+}: PharmacyCardProps) {
   const likelyOpen = isLikelyOpenNow(pharmacy.businessHours);
   const todayHours = formatTodayHours(pharmacy.businessHours);
   const closedToday = todayHours === '本日休み';
+  const compactHours = todayHours.split('/')[0]?.trim() || todayHours;
 
   const openDetail = () => {
     onClick?.();
@@ -31,7 +38,7 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
   };
 
   const hoursLabel = pharmacy.businessHours
-    ? (likelyOpen ? `開局中 ${todayHours}` : todayHours)
+    ? (likelyOpen ? `開局中 ${compactHours}` : compactHours)
     : (likelyOpen ? '開局中' : null);
 
   return (
@@ -61,12 +68,12 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
       </div>
 
       <p className="mt-0.5 text-gray-600 text-sm leading-snug truncate">
-        {formatPharmacyAddress(pharmacy.address, pharmacy.prefecture)}
+        {formatPharmacyAddress(pharmacy.address, pharmacy.prefecture, activeMunicipality)}
       </p>
 
-      <div className="mt-1 flex flex-nowrap gap-1.5 overflow-hidden">
+      <div className="mt-1 flex flex-wrap gap-1.5">
         {hoursLabel && (
-          <span className={`inline-flex min-w-0 items-center gap-1 px-1.5 py-0.5 text-xs rounded truncate ${
+          <span className={`inline-flex items-center px-1.5 py-0.5 text-xs rounded ${
             closedToday
               ? 'bg-gray-100 text-gray-600'
               : 'bg-[#EBF6FC] text-[#4AA8D9]'
@@ -75,12 +82,12 @@ export function PharmacyCard({ pharmacy, onClick, hasUserLocation = false }: Pha
           </span>
         )}
         {pharmacy.advanceCallRequired === '要' && (
-          <span className="inline-flex shrink-0 items-center px-1.5 py-0.5 text-xs bg-amber-50 text-amber-700 rounded">
+          <span className="inline-flex items-center px-1.5 py-0.5 text-xs bg-amber-50 text-amber-700 rounded">
             要事前連絡
           </span>
         )}
         {pharmacy.pharmacistFemale !== undefined && pharmacy.pharmacistFemale > 0 && (
-          <span className="inline-flex shrink-0 items-center px-1.5 py-0.5 text-xs bg-[#EBF6FC] text-[#4AA8D9] rounded">
+          <span className="inline-flex items-center px-1.5 py-0.5 text-xs bg-[#EBF6FC] text-[#4AA8D9] rounded">
             女性薬剤師
           </span>
         )}

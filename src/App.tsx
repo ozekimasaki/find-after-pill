@@ -639,6 +639,7 @@ function App() {
               )
             }
             preferredMunicipality={preferredCity}
+            activeMunicipality={selectedMunicipality}
             showUnmeasuredDistance={
               !!userLocation && pharmacies.some((pharmacy) => pharmacy.distance !== undefined)
             }
