@@ -11,7 +11,7 @@ function shortPrefectureName(name: string): string {
 export function PrefectureChips({
   counts,
   onSelect,
-  limit = 4,
+  limit = 6,
 }: PrefectureChipsProps) {
   const top = Object.entries(counts)
     .filter(([, count]) => count > 0)

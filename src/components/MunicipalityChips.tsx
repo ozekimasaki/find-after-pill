@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { compareMunicipalityNames, shortMunicipalityLabel } from '../utils/municipalityRank';
 
 interface MunicipalityChipsProps {
@@ -8,6 +8,7 @@ interface MunicipalityChipsProps {
   onSelect: (municipality: string) => void;
   moreLabel?: string;
   onClearSelection?: () => void;
+  leading?: ReactNode;
 }
 
 const PREVIEW_COUNT = 3;
@@ -44,17 +45,18 @@ export function MunicipalityChips({
   onSelect,
   moreLabel,
   onClearSelection,
+  leading,
 }: MunicipalityChipsProps) {
   const [expanded, setExpanded] = useState(false);
   const cities = Object.entries(counts)
     .sort((a, b) => compareMunicipalityNames(a[0], b[0], preferred, counts))
     .slice(0, 24);
 
-  if (cities.length < 2) {
+  if (cities.length < 2 && !leading) {
     return null;
   }
 
-  const previewLimit = moreLabel && selected ? 2 : PREVIEW_COUNT;
+  const previewLimit = moreLabel && selected ? 2 : (leading ? 2 : PREVIEW_COUNT);
   const visible = expanded ? cities : pickPreview(cities, selected, preferred, previewLimit);
   const hiddenCount = Math.max(0, cities.length - visible.length);
 
@@ -62,6 +64,7 @@ export function MunicipalityChips({
     <div className="mb-1.5">
       <p className="sr-only">市区町村で絞り込む</p>
       <div className="flex flex-wrap gap-1.5">
+        {leading}
         {visible.map(([name, count]) => {
           const isActive = selected === name;
           return (

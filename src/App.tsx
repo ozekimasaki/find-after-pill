@@ -12,6 +12,7 @@ import { FAQ } from './components/FAQ';
 import { PharmacyDetail } from './components/PharmacyDetail';
 import { MunicipalityChips } from './components/MunicipalityChips';
 import { PrefectureChips } from './components/PrefectureChips';
+import { OpenNowToggle } from './components/OpenNowToggle';
 import { FilterToggleButton } from './components/FilterToggleButton';
 import { SearchToggleButton } from './components/SearchToggleButton';
 import { useGeolocation } from './hooks/useGeolocation';
@@ -287,6 +288,13 @@ function App() {
     setSearchParams(params);
   }, [setSearchParams, wasAutoEnabled]);
 
+  const openNowToggle = (
+    <OpenNowToggle
+      pressed={!!searchParams.openNowOnly}
+      onClick={() => handleFilterChange({ openNowOnly: !searchParams.openNowOnly })}
+    />
+  );
+
   const handleMunicipalitySelect = useCallback((city: string) => {
     const next = selectedMunicipality === city ? '' : city;
     if (!next) {
@@ -455,25 +463,23 @@ function App() {
                   counts={prefectureCounts}
                   onSelect={handlePrefectureChange}
                 />
+                <ol className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-3 gap-1 text-center">
+                  <li>
+                    <p className="text-[#4AA8D9] text-xs font-medium">1</p>
+                    <p className="text-xs text-gray-500">場所を選ぶ</p>
+                  </li>
+                  <li>
+                    <p className="text-[#4AA8D9] text-xs font-medium">2</p>
+                    <p className="text-xs text-gray-500">電話する</p>
+                  </li>
+                  <li>
+                    <p className="text-[#4AA8D9] text-xs font-medium">3</p>
+                    <p className="text-xs text-gray-500">薬局で服用</p>
+                  </li>
+                </ol>
               </div>
             )}
           </div>
-        )}
-        {!hasSearchScope && !userLocation && (
-          <ol className="md:hidden mt-4 mb-1 grid grid-cols-3 gap-1 text-center">
-            <li>
-              <p className="text-[#4AA8D9] text-xs font-medium">1</p>
-              <p className="text-xs text-gray-500">場所を選ぶ</p>
-            </li>
-            <li>
-              <p className="text-[#4AA8D9] text-xs font-medium">2</p>
-              <p className="text-xs text-gray-500">電話する</p>
-            </li>
-            <li>
-              <p className="text-[#4AA8D9] text-xs font-medium">3</p>
-              <p className="text-xs text-gray-500">薬局で服用</p>
-            </li>
-          </ol>
         )}
 
         <div
@@ -782,7 +788,7 @@ function App() {
           </div>
         )}
 
-        {viewMode === 'list' && showMunicipalityChips && (
+        {viewMode === 'list' && hasSearchScope && showMunicipalityChips && (
           <MunicipalityChips
             counts={municipalityCounts}
             selected={selectedMunicipality}
@@ -794,7 +800,13 @@ function App() {
                 : undefined
             }
             onClearSelection={handleClearMunicipality}
+            leading={openNowToggle}
           />
+        )}
+        {viewMode === 'list' && hasSearchScope && !showMunicipalityChips && (
+          <div className="mb-1.5">
+            {openNowToggle}
+          </div>
         )}
 
         <h2 className="sr-only">検索結果</h2>

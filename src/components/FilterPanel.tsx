@@ -106,7 +106,7 @@ export function FilterPanel({ searchParams, setSearchParams }: FilterPanelProps)
                 isActive
                   ? 'bg-[#65BBE9] text-white border-transparent'
                   : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-              }`}
+              } ${key === 'openNowOnly' ? 'max-md:hidden' : ''}`}
             >
               {icon}
               <span className="md:hidden">{shortLabel}</span>
