@@ -21,22 +21,8 @@ const LOW_ACCURACY_OPTIONS: PositionOptions = {
   maximumAge: 300000,
 };
 
-function toErrorMessage(err: GeolocationPositionError): string {
-  switch (err.code) {
-    case err.PERMISSION_DENIED:
-      return '位置情報は使わずに進めます。下の都道府県から探してください';
-    case err.POSITION_UNAVAILABLE:
-      return 'いま位置を取れませんでした。下の都道府県から探してください';
-    case err.TIMEOUT:
-      return '位置の取得に時間がかかりました。下の都道府県から探してください';
-    default:
-      return '位置を取れませんでした。下の都道府県から探してください';
-  }
-}
+const LOCATION_FALLBACK_MESSAGE = '都道府県から探してください';
 
-/**
- * 現在地を取得するカスタムフック
- */
 export function useGeolocation(): UseGeolocationReturn {
   const [location, setLocation] = useState<GeoLocation | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +30,7 @@ export function useGeolocation(): UseGeolocationReturn {
 
   const getCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      setError('位置情報に未対応です。下の都道府県から探してください');
+      setError(LOCATION_FALLBACK_MESSAGE);
       return;
     }
 
@@ -60,8 +46,8 @@ export function useGeolocation(): UseGeolocationReturn {
       setLoading(false);
     };
 
-    const onLowAccuracyFailure = (err: GeolocationPositionError) => {
-      setError(toErrorMessage(err));
+    const onLowAccuracyFailure = () => {
+      setError(LOCATION_FALLBACK_MESSAGE);
       setLoading(false);
     };
 
@@ -69,7 +55,7 @@ export function useGeolocation(): UseGeolocationReturn {
       onSuccess,
       (err) => {
         if (err.code === err.PERMISSION_DENIED) {
-          setError(toErrorMessage(err));
+          setError(LOCATION_FALLBACK_MESSAGE);
           setLoading(false);
           return;
         }

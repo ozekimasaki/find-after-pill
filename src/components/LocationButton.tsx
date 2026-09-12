@@ -3,9 +3,10 @@ interface LocationButtonProps {
   loading: boolean;
   hasLocation: boolean;
   onClear?: () => void;
+  hideHint?: boolean;
 }
 
-export function LocationButton({ onClick, loading, hasLocation, onClear }: LocationButtonProps) {
+export function LocationButton({ onClick, loading, hasLocation, onClear, hideHint = false }: LocationButtonProps) {
   if (hasLocation && onClear) {
     return (
       <div className="flex gap-2">
@@ -61,9 +62,11 @@ export function LocationButton({ onClick, loading, hasLocation, onClear }: Locat
           </>
         )}
       </button>
+      {!hideHint && (
       <p className="mt-1.5 text-xs text-gray-400 text-center">
         位置情報は保存しません
       </p>
+      )}
     </div>
   );
 }

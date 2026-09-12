@@ -21,6 +21,7 @@ import { isAfterHoursJst } from './utils/pharmacyAvailability';
 import { inferPrefecture } from './utils/prefectureFromLocation';
 import { matchKnownMunicipality } from './utils/reverseMunicipality';
 import { shortMunicipalityLabel } from './utils/municipalityRank';
+import { isLikelyInJapan } from './utils/japanBounds';
 import {
   DEFAULT_RADIUS,
   RADIUS_OPTIONS,
@@ -173,6 +174,14 @@ function App() {
     locationSearch.fallback !== 'prefecture' &&
     locationSearch.nearbyCount > 0
   );
+  const mappableCount = useMemo(
+    () => pharmacies.filter((pharmacy) => (
+      pharmacy.lat !== null &&
+      pharmacy.lng !== null &&
+      isLikelyInJapan(pharmacy.lat, pharmacy.lng)
+    )).length,
+    [pharmacies]
+  );
 
   const handlePrefectureChange = useCallback((prefecture: string) => {
     userFilterRef.current = true;
@@ -292,6 +301,12 @@ function App() {
   }, [searchParams, viewMode, userLocation, hoursTouched]);
 
   useEffect(() => {
+    if (viewMode === 'map' && mappableCount === 0) {
+      setViewMode('list');
+    }
+  }, [viewMode, mappableCount]);
+
+  useEffect(() => {
     if (!locationError) {
       return;
     }
@@ -372,6 +387,7 @@ function App() {
               loading={locationLoading}
               hasLocation={!!userLocation}
               onClear={handleClearLocation}
+              hideHint={Boolean(locationError)}
             />
             {locationError && (
               <p className="mt-2 text-sm text-[#4AA8D9]">{locationError}</p>
@@ -580,7 +596,7 @@ function App() {
             </span>
           )}
         </div>
-        {hasSearchScope && (
+        {hasSearchScope && mappableCount > 0 && (
         <nav aria-label="表示切替" className="shrink-0 flex rounded-lg bg-white p-0.5 shadow-sm" role="tablist">
           <button
             type="button"
