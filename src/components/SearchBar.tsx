@@ -11,7 +11,7 @@ interface SearchBarProps {
 export function SearchBar({
   value,
   onChange,
-  placeholder = '店名・住所・電話',
+  placeholder = '店名・市区・電話',
   autoFocus = false,
   inputId = 'pharmacy-search',
 }: SearchBarProps) {
@@ -26,7 +26,7 @@ export function SearchBar({
   return (
     <div className="relative">
       <label htmlFor={inputId} className="sr-only">
-        薬局名・住所・電話番号で検索
+        薬局名・市区・電話番号で検索
       </label>
       <input
         id={inputId}

@@ -290,7 +290,7 @@ export function usePharmacies(
           return groupDelta;
         }
         if (collapseParents && cityA && cityB && cityA !== cityB) {
-          return cityA.localeCompare(cityB, 'ja');
+          return compareMunicipalityNames(cityA, cityB, null, municipalityCounts);
         }
         return compareOpenThenName(a, b);
       });

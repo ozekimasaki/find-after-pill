@@ -20,7 +20,7 @@ export function SearchToggleButton({
       } ${open ? 'bg-[#EBF6FC]' : ''}`}
       aria-expanded={open}
       aria-controls="pharmacy-search"
-      aria-label={open ? '店名検索を閉じる' : '店名・住所・電話で探す'}
+      aria-label={open ? '店名検索を閉じる' : '店名・市区・電話で探す'}
     >
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path
