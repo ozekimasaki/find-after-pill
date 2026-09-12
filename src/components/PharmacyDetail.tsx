@@ -56,6 +56,13 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
   const likelyOpen = isLikelyOpenNow(pharmacy.businessHours);
   const todayHours = formatTodayHours(pharmacy.businessHours);
   const compactHours = todayHours.split('/')[0]?.trim() || todayHours;
+  const rawHours = pharmacy.businessHours?.normalize('NFKC') ?? '';
+  const showRawHours = Boolean(
+    compactHours &&
+    rawHours &&
+    rawHours.replace(/\s+/g, '') !== compactHours.replace(/\s+/g, '') &&
+    rawHours.replace(/365,?日/g, '').replace(/\s+/g, '') !== compactHours.replace(/\s+/g, '')
+  );
 
   const normalizeUrl = (url: string): string => {
     if (!url) return '';
@@ -251,8 +258,8 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
                         ? (likelyOpen ? `本日 ${compactHours}（開局中の目安）` : compactHours)
                         : pharmacy.businessHours.normalize('NFKC')}
                     </p>
-                    {pharmacy.businessHours.normalize('NFKC') !== compactHours && compactHours && (
-                      <p className="mt-1 text-sm text-gray-500">{pharmacy.businessHours.normalize('NFKC')}</p>
+                    {showRawHours && (
+                      <p className="mt-1 text-sm text-gray-500">{rawHours}</p>
                     )}
                   </div>
                 }
