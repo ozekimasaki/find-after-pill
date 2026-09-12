@@ -201,11 +201,10 @@ function App() {
     Object.keys(municipalityCounts).length >= 2
   );
   const hideResultCount = Boolean(
-    extraFilterCount === 0 &&
     !listLoading &&
     !searchParams.query &&
     showMunicipalityChips && (
-      (!userLocation && searchParams.prefecture && !selectedMunicipality) ||
+      (extraFilterCount === 0 && !userLocation && searchParams.prefecture && !selectedMunicipality) ||
       (selectedMunicipality && !(userLocation && searchParams.radius && locationSearch.fallback === 'none'))
     )
   );
