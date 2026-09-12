@@ -397,7 +397,7 @@ function App() {
       >
         検索結果へスキップ
       </a>
-      <Header meta={meta} loadedCount={loadedCount} compact={hasSearchScope} />
+      <Header meta={meta} loadedCount={loadedCount} compact={hasSearchScope} hideFaq={!hasSearchScope} />
 
       <main className="flex-1 flex flex-col max-w-7xl mx-auto w-full px-4 py-3 sm:py-6">
         <h2 className="sr-only">薬局を検索</h2>
@@ -418,15 +418,48 @@ function App() {
             {locationError && (
               <p className="mt-2 text-sm text-[#4AA8D9]">{locationError}</p>
             )}
+            {!hasSearchScope && (
+              <div className="mt-3 md:hidden">
+                <p className="text-xs text-gray-400 text-center mb-2">または</p>
+                <div className={`flex items-center gap-2 ${showSearchBar ? 'mb-2' : ''}`}>
+                  <div className="min-w-0 flex-1">
+                    <PrefectureFilter
+                      value={searchParams.prefecture || ''}
+                      onChange={handlePrefectureChange}
+                      counts={prefectureCounts}
+                      emphasized={Boolean(locationError)}
+                    />
+                  </div>
+                  <SearchToggleButton
+                    open={searchOpen}
+                    active={Boolean(queryInput)}
+                    onClick={() => setSearchOpen((current) => !current)}
+                  />
+                </div>
+                {showSearchBar && (
+                  <SearchBar
+                    inputId="pharmacy-search"
+                    value={queryInput}
+                    onChange={(value) => {
+                      setQueryInput(value);
+                      if (value) {
+                        setSearchOpen(true);
+                      }
+                    }}
+                    autoFocus={searchOpen}
+                  />
+                )}
+              </div>
+            )}
           </div>
         )}
 
         <div
           role="search"
-          className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 py-1 mb-2 border-b border-gray-100"
+          className={`sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm -mx-4 px-4 py-1 mb-2 border-b border-gray-100 ${hasSearchScope ? '' : 'hidden md:block'}`}
         >
             <div className="bg-white rounded-xl shadow-sm p-2 md:p-3">
-              {!userLocation && (
+              {!userLocation && hasSearchScope && (
                 <div className={`flex items-center gap-2 md:hidden ${showSearchBar ? 'mb-2' : ''}`}>
                   <div className="min-w-0 flex-1">
                     <PrefectureFilter
@@ -436,39 +469,35 @@ function App() {
                       emphasized={Boolean(locationError)}
                     />
                   </div>
-                  {hasSearchScope && (
-                    <button
-                      type="button"
-                      onClick={handleGetCurrentLocation}
-                      disabled={locationLoading}
-                      aria-label="現在地から探す"
-                      className="shrink-0 inline-flex items-center justify-center w-8 h-8 text-[#4AA8D9] rounded-lg hover:bg-[#EBF6FC] disabled:opacity-50"
-                    >
-                      {locationLoading ? (
-                        <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                      ) : (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                      )}
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={handleGetCurrentLocation}
+                    disabled={locationLoading}
+                    aria-label="現在地から探す"
+                    className="shrink-0 inline-flex items-center justify-center w-8 h-8 text-[#4AA8D9] rounded-lg hover:bg-[#EBF6FC] disabled:opacity-50"
+                  >
+                    {locationLoading ? (
+                      <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    )}
+                  </button>
                   <SearchToggleButton
                     open={searchOpen}
                     active={Boolean(queryInput)}
                     onClick={() => setSearchOpen((current) => !current)}
                   />
-                  {hasSearchScope && (
-                    <FilterToggleButton
-                      open={extrasOpen}
-                      count={extraFilterCount}
-                      onClick={() => setFiltersPinned((current) => !current)}
-                    />
-                  )}
+                  <FilterToggleButton
+                    open={extrasOpen}
+                    count={extraFilterCount}
+                    onClick={() => setFiltersPinned((current) => !current)}
+                  />
                 </div>
               )}
               {userLocation && (
@@ -522,6 +551,7 @@ function App() {
               <div className={`gap-2 md:grid md:grid-cols-3 md:gap-3 items-center ${showSearchBar ? 'flex' : 'hidden md:flex'}`}>
                 <div className="min-w-0 flex-1 md:col-span-2">
                   <SearchBar
+                    inputId={hasSearchScope ? 'pharmacy-search' : 'pharmacy-search-wide'}
                     value={queryInput}
                     onChange={(value) => {
                       setQueryInput(value);
@@ -529,7 +559,7 @@ function App() {
                         setSearchOpen(true);
                       }
                     }}
-                    autoFocus={searchOpen}
+                    autoFocus={searchOpen && hasSearchScope}
                   />
                 </div>
                 <div className="w-[9.25rem] shrink-0 md:w-auto hidden md:block">

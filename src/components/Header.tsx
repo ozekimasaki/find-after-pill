@@ -4,9 +4,10 @@ interface HeaderProps {
   meta: PharmacyMeta | null;
   loadedCount?: number;
   compact?: boolean;
+  hideFaq?: boolean;
 }
 
-export function Header({ meta, loadedCount, compact = false }: HeaderProps) {
+export function Header({ meta, loadedCount, compact = false, hideFaq = false }: HeaderProps) {
   const formatDate = (isoString: string) => {
     const date = new Date(isoString);
     return date.toLocaleDateString('ja-JP', {
@@ -29,7 +30,7 @@ export function Header({ meta, loadedCount, compact = false }: HeaderProps) {
             </p>
             <span className="sr-only">ノルレボ・レソエル72等の緊急避妊薬（アフターピル）を販売している薬局を検索できます</span>
           </div>
-          <nav aria-label="ページ内リンク" className={`shrink-0 ${compact ? 'hidden sm:block' : ''}`}>
+          <nav aria-label="ページ内リンク" className={`shrink-0 ${compact || hideFaq ? 'hidden sm:block' : ''}`}>
             <a href="#faq" className="inline-flex items-center gap-1 text-xs sm:text-sm text-white bg-white/25 hover:bg-white/35 px-3 py-1.5 rounded-full transition-colors">
               <span>?</span>
               よくある質問

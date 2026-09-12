@@ -5,6 +5,7 @@ interface SearchBarProps {
   onChange: (query: string) => void;
   placeholder?: string;
   autoFocus?: boolean;
+  inputId?: string;
 }
 
 export function SearchBar({
@@ -12,6 +13,7 @@ export function SearchBar({
   onChange,
   placeholder = '店名・住所・電話',
   autoFocus = false,
+  inputId = 'pharmacy-search',
 }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -23,11 +25,11 @@ export function SearchBar({
 
   return (
     <div className="relative">
-      <label htmlFor="pharmacy-search" className="sr-only">
+      <label htmlFor={inputId} className="sr-only">
         薬局名・住所・電話番号で検索
       </label>
       <input
-        id="pharmacy-search"
+        id={inputId}
         ref={inputRef}
         type="search"
         value={value}
