@@ -1,59 +1,70 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useDebounce } from '../hooks/useDebounce';
+import { useEffect, useRef } from 'react';
 
 interface SearchBarProps {
-  onSearch: (query: string) => void;
+  value: string;
+  onChange: (query: string) => void;
   placeholder?: string;
+  autoFocus?: boolean;
+  inputId?: string;
 }
 
-export function SearchBar({ onSearch, placeholder = '薬局名・住所で検索' }: SearchBarProps) {
-  const [value, setValue] = useState('');
-  const debouncedValue = useDebounce(value, 300);
+export function SearchBar({
+  value,
+  onChange,
+  placeholder = '店名・市区・電話',
+  autoFocus = false,
+  inputId = 'pharmacy-search',
+}: SearchBarProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    onSearch(debouncedValue.trim());
-  }, [debouncedValue, onSearch]);
-
-  const handleClear = useCallback(() => {
-    setValue('');
-    onSearch('');
-  }, [onSearch]);
+    if (autoFocus) {
+      inputRef.current?.focus();
+    }
+  }, [autoFocus]);
 
   return (
     <div className="relative">
-      <div className="relative">
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={placeholder}
-          className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#65BBE9] focus:border-transparent outline-none transition-all"
+      <label htmlFor={inputId} className="sr-only">
+        薬局名・市区・電話番号で検索
+      </label>
+      <input
+        id={inputId}
+        ref={inputRef}
+        type="search"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        autoComplete="off"
+        enterKeyHint="search"
+        className="w-full pl-9 pr-9 py-2 md:pl-10 md:pr-10 md:py-3 text-sm md:text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#65BBE9] focus:border-transparent outline-none transition-all [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
+      />
+      <svg
+        className="absolute left-2.5 md:left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400 pointer-events-none"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
         />
-        <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      </svg>
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange('')}
+          className="absolute right-2.5 md:right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          aria-label="検索キーワードをクリア"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
-        {value && (
-          <button
-            type="button"
-            onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        )}
-      </div>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

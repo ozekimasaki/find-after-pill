@@ -4,6 +4,9 @@ import L from 'leaflet';
 import 'leaflet.markercluster';
 import type { PharmacyWithDistance } from '../types/pharmacy';
 import type { GeoLocation } from '../types/pharmacy';
+import { formatDistance } from '../utils/distance';
+import { toTelHref, formatPhoneDisplay } from '../utils/phone';
+import { isLikelyInJapan } from '../utils/japanBounds';
 
 // Leafletのデフォルトアイコンを修正
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -49,6 +52,8 @@ const userLocationIcon = new L.DivIcon({
 interface MapProps {
   pharmacies: PharmacyWithDistance[];
   userLocation?: GeoLocation | null;
+  onSelectPharmacy?: (pharmacy: PharmacyWithDistance) => void;
+  onShowList?: () => void;
 }
 
 // 地図の中心を更新するコンポーネント
@@ -66,8 +71,18 @@ function MapUpdater({ center, zoom }: { center: [number, number]; zoom: number }
   return null;
 }
 
+const MAP_MARKER_LIMIT = 1500;
+
 // クラスタリングされたマーカーレイヤー
-function MarkerLayer({ pharmacies }: { pharmacies: PharmacyWithDistance[] }) {
+function MarkerLayer({
+  pharmacies,
+  onSelectPharmacy,
+  userLocation,
+}: {
+  pharmacies: PharmacyWithDistance[];
+  onSelectPharmacy?: (pharmacy: PharmacyWithDistance) => void;
+  userLocation?: GeoLocation | null;
+}) {
   const map = useMap();
 
   useEffect(() => {
@@ -78,38 +93,68 @@ function MarkerLayer({ pharmacies }: { pharmacies: PharmacyWithDistance[] }) {
       showCoverageOnHover: false,
     });
 
-    pharmacies.forEach(p => {
+    const bounded: L.LatLngExpression[] = [];
+
+    pharmacies.forEach((p) => {
       if (p.lat === null || p.lng === null) return;
+      if (!isLikelyInJapan(p.lat, p.lng)) return;
+      bounded.push([p.lat, p.lng]);
       const marker = L.marker([p.lat, p.lng], { icon: pharmacyIcon });
 
-      let popupContent = `<div style="min-width:200px"><h3 style="font-weight:bold;color:#111827;margin:0">${p.name}</h3>`;
-      popupContent += `<p style="font-size:0.875rem;color:#4b5563;margin-top:4px">${p.address}</p>`;
+      let popupContent = `<div style="min-width:200px"><h3 style="font-weight:bold;color:#111827;margin:0">${escapeHtml(p.name)}</h3>`;
+      popupContent += `<p style="font-size:0.875rem;color:#4b5563;margin-top:4px">${escapeHtml(p.address)}</p>`;
       if (p.phone) {
-        popupContent += `<p style="font-size:0.875rem;margin-top:4px"><a href="tel:${p.phone}" style="color:#65BBE9;text-decoration:none">${p.phone}</a></p>`;
+        popupContent += `<p style="font-size:0.875rem;margin-top:4px"><a href="${toTelHref(p.phone)}" style="color:#65BBE9;text-decoration:none">${escapeHtml(formatPhoneDisplay(p.phone))}</a></p>`;
       }
       if (p.distance !== undefined) {
-        popupContent += `<p style="font-size:0.875rem;color:#65BBE9;margin-top:4px">約 ${p.distance.toFixed(1)}km</p>`;
+        popupContent += `<p style="font-size:0.875rem;color:#65BBE9;margin-top:4px">${formatDistance(p.distance)}</p>`;
       }
-      const routeUrl = p.lat !== null && p.lng !== null
-        ? `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`
-        : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(p.address)}`;
-      popupContent += `<p style="margin-top:8px"><a href="${routeUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:4px;padding:4px 8px;background:#f3f4f6;border-radius:6px;color:#374151;text-decoration:none;font-size:0.875rem"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>ルートを調べる</a></p>`;
+      popupContent += `<p style="margin-top:8px"><button type="button" data-pharmacy-id="${escapeHtml(p.id)}" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:#65BBE9;border:0;border-radius:6px;color:white;font-size:0.875rem;cursor:pointer">詳細を見る</button></p>`;
       popupContent += `</div>`;
 
       marker.bindPopup(popupContent);
+      marker.on('popupopen', () => {
+        const btn = document.querySelector<HTMLButtonElement>(`button[data-pharmacy-id="${CSS.escape(p.id)}"]`);
+        btn?.addEventListener('click', () => onSelectPharmacy?.(p));
+      });
       cluster.addLayer(marker);
     });
 
     map.addLayer(cluster);
+
+    if (bounded.length > 0) {
+      const bounds = L.latLngBounds(bounded);
+      if (userLocation) {
+        bounds.extend([userLocation.lat, userLocation.lng]);
+      }
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: userLocation ? 14 : 11 });
+    }
+
     return () => { map.removeLayer(cluster); };
-  }, [pharmacies, map]);
+  }, [pharmacies, map, onSelectPharmacy, userLocation]);
 
   return null;
 }
 
-export function Map({ pharmacies, userLocation }: MapProps) {
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+export function Map({ pharmacies, userLocation, onSelectPharmacy, onShowList }: MapProps) {
   // 座標のある薬局のみ
-  const mappablePharmacies = pharmacies.filter(p => p.lat !== null && p.lng !== null);
+  const mappablePharmacies = pharmacies.filter(p =>
+    p.lat !== null && p.lng !== null && isLikelyInJapan(p.lat, p.lng)
+  );
+  const limitedPharmacies = userLocation
+    ? mappablePharmacies.slice(0, MAP_MARKER_LIMIT)
+    : mappablePharmacies.length > MAP_MARKER_LIMIT
+      ? mappablePharmacies.slice(0, MAP_MARKER_LIMIT)
+      : mappablePharmacies;
+  const hiddenCount = mappablePharmacies.length - limitedPharmacies.length;
 
   // 地図の中心を決定
   const defaultCenter: [number, number] = [35.6812, 139.7671]; // 東京
@@ -127,18 +172,48 @@ export function Map({ pharmacies, userLocation }: MapProps) {
 
   if (mappablePharmacies.length === 0 && !userLocation) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-100 rounded-lg">
-        <div className="text-center text-gray-500">
-          <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="h-full flex items-center justify-center bg-gray-50 rounded-lg px-6">
+        <div className="text-center text-gray-600 max-w-sm">
+          <svg className="w-12 h-12 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
           </svg>
-          <p>表示できる薬局がありません</p>
+          <p className="font-medium text-gray-700">地図に表示できる位置情報がありません</p>
+          {pharmacies.length > 0 ? (
+            <p className="mt-2 text-sm text-gray-500">
+              一覧には{pharmacies.length.toLocaleString()}件ありますが、地図座標が未登録です。一覧タブから電話やルートを確認できます。
+            </p>
+          ) : (
+            <p className="mt-2 text-sm text-gray-500">条件を変えるか、一覧タブから探してみてください。</p>
+          )}
         </div>
       </div>
     );
   }
 
   return (
+    <div className="relative h-full w-full">
+      {hiddenCount > 0 && (
+        <p className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] px-3 py-1.5 text-xs bg-white/95 text-gray-600 rounded-full shadow-sm">
+          地図には{MAP_MARKER_LIMIT}件まで表示しています。都道府県や距離で絞り込むと見やすくなります
+        </p>
+      )}
+      {mappablePharmacies.length === 0 && (
+        <div className="absolute inset-x-3 bottom-3 z-[1000] px-3 py-3 bg-white/95 text-gray-700 rounded-xl shadow-md">
+          <p className="text-sm font-medium">近くに地図ピンはありません</p>
+          <p className="mt-1 text-sm text-gray-500">
+            一覧で{pharmacies.length.toLocaleString()}件を確認できます。電話やルートはそこからどうぞ。
+          </p>
+          {onShowList && (
+            <button
+              type="button"
+              onClick={onShowList}
+              className="mt-2 text-sm text-[#4AA8D9] hover:underline"
+            >
+              一覧を見る
+            </button>
+          )}
+        </div>
+      )}
     <MapContainer
       center={center}
       zoom={zoom}
@@ -167,7 +242,12 @@ export function Map({ pharmacies, userLocation }: MapProps) {
       )}
 
       {/* 薬局マーカー（クラスタリング） */}
-      <MarkerLayer pharmacies={mappablePharmacies} />
+      <MarkerLayer
+        pharmacies={limitedPharmacies}
+        onSelectPharmacy={onSelectPharmacy}
+        userLocation={userLocation}
+      />
     </MapContainer>
+    </div>
   );
 }

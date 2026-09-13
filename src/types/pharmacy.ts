@@ -70,6 +70,8 @@ export interface SearchParams {
   prefecture?: string;
   /** フリーワード検索 */
   query?: string;
+  /** 市区町村フィルター（政令市は区まで） */
+  municipality?: string;
   /** 現在地の緯度 */
   lat?: number;
   /** 現在地の経度 */
@@ -84,6 +86,13 @@ export interface SearchParams {
   femalePharmacistOnly?: boolean;
   /** プライバシー配慮ありのみ */
   hasPrivateSpace?: boolean;
+  /** いま開局中の目安のみ */
+  openNowOnly?: boolean;
+  /**
+   * 現在地から推測した都道府県。
+   * true のときは近傍検索で他県の薬局も残す。
+   */
+  prefectureIsHint?: boolean;
 }
 
 /**

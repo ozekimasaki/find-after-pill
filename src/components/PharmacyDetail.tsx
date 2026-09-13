@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { PharmacyWithDistance } from '../types/pharmacy';
 import { formatDistance } from '../utils/distance';
+import { formatTodayHours, isLikelyOpenNow } from '../utils/pharmacyAvailability';
+import { toTelHref, formatPhoneDisplay } from '../utils/phone';
+import { formatPharmacyAddress } from '../utils/formatAddress';
 
 interface PharmacyDetailProps {
   pharmacy: PharmacyWithDistance;
@@ -30,6 +33,7 @@ function DetailRow({ icon, label, value }: DetailRowProps) {
 export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
   const [copied, setCopied] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number | null>(null);
 
   const getGoogleMapsRouteUrl = () => {
@@ -48,6 +52,17 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
 
   const googleMapsUrl = getGoogleMapsRouteUrl();
   const appleMapsUrl = getAppleMapsRouteUrl();
+  const titleId = 'pharmacy-detail-title';
+  const likelyOpen = isLikelyOpenNow(pharmacy.businessHours);
+  const todayHours = formatTodayHours(pharmacy.businessHours);
+  const compactHours = todayHours.split('/')[0]?.trim() || todayHours;
+  const rawHours = pharmacy.businessHours?.normalize('NFKC') ?? '';
+  const showRawHours = Boolean(
+    compactHours &&
+    rawHours &&
+    rawHours.replace(/\s+/g, '') !== compactHours.replace(/\s+/g, '') &&
+    rawHours.replace(/365,?日/g, '').replace(/\s+/g, '') !== compactHours.replace(/\s+/g, '')
+  );
 
   const normalizeUrl = (url: string): string => {
     if (!url) return '';
@@ -64,16 +79,49 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
     return () => { document.body.style.overflow = original; };
   }, []);
 
-  // Escape key to close
+  // Escape / focus trap / restore focus
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const modal = scrollRef.current;
+    const focusableSelector = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+    const getFocusable = () =>
+      modal ? Array.from(modal.querySelectorAll<HTMLElement>(focusableSelector)) : [];
+
+    getFocusable()[0]?.focus();
+
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab' || !modal) {
+        return;
+      }
+      const focusable = getFocusable();
+      if (focusable.length === 0) {
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
     document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    return () => {
+      document.removeEventListener('keydown', handler);
+      previouslyFocused?.focus();
+    };
   }, [onClose]);
 
   // Swipe down to close (mobile)
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (scrollRef.current && scrollRef.current.scrollTop === 0) {
+    if (contentRef.current && contentRef.current.scrollTop === 0) {
       touchStartY.current = e.touches[0].clientY;
     } else {
       touchStartY.current = null;
@@ -92,7 +140,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
 
   // Share / Copy
   const handleShare = async () => {
-    const shareText = `${pharmacy.name}\n${pharmacy.address}\n${pharmacy.phone || ''}`.trim();
+    const shareText = `${pharmacy.name}\n${formatPharmacyAddress(pharmacy.address, pharmacy.prefecture)}\n${pharmacy.phone ? formatPhoneDisplay(pharmacy.phone) : ''}`.trim();
     if (navigator.share) {
       try {
         await navigator.share({ text: shareText });
@@ -107,7 +155,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 animate-[fadeIn_0.2s_ease-out]"
@@ -117,19 +165,30 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
       {/* Modal */}
       <div
         ref={scrollRef}
-        className="relative w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[90vh] overflow-auto animate-slideUp sm:animate-fadeInScale"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+        className="relative w-full h-[100dvh] sm:h-auto sm:max-w-lg bg-white sm:rounded-2xl shadow-xl sm:max-h-[92dvh] flex flex-col overflow-hidden animate-slideUp sm:animate-fadeInScale pb-[env(safe-area-inset-bottom)] isolate"
       >
         {/* Drag handle (mobile) */}
-        <div className="sm:hidden w-10 h-1 bg-gray-300 rounded-full mx-auto mt-2 mb-1" />
+        <div className="sm:hidden w-10 h-1 bg-gray-300 rounded-full mx-auto mt-2 mb-1 shrink-0" />
 
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
-          <h2 className="text-lg font-bold text-gray-900">薬局詳細</h2>
+        <div className="shrink-0 bg-white border-b border-gray-200 px-4 py-2.5 flex items-start gap-2 z-10">
+          <div className="min-w-0 flex-1">
+            <h2 id={titleId} className="text-[17px] font-bold text-gray-900 leading-snug">
+              {pharmacy.name}
+            </h2>
+            {(likelyOpen || pharmacy.distance !== undefined) && (
+              <p className="mt-0.5 text-xs text-[#4AA8D9]">
+                {likelyOpen ? '開局中の目安' : ''}
+                {likelyOpen && pharmacy.distance !== undefined ? ' · ' : ''}
+                {pharmacy.distance !== undefined ? formatDistance(pharmacy.distance) : ''}
+              </p>
+            )}
+          </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+            className="shrink-0 p-2 -mr-1 -mt-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="閉じる"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -138,19 +197,14 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
         </div>
 
         {/* Content */}
+        <div
+          ref={contentRef}
+          className="flex-1 min-h-0 overflow-auto"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
         <div className="p-4">
-          {/* 薬局名と距離 */}
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="text-xl font-bold text-gray-900">{pharmacy.name}</h3>
-            {pharmacy.distance !== undefined && (
-              <span className="flex-shrink-0 px-3 py-1 bg-[#EBF6FC] text-[#4AA8D9] font-medium rounded-full">
-                {formatDistance(pharmacy.distance)}
-              </span>
-            )}
-          </div>
-
-          {/* 基本情報 */}
-          <div className="mt-4 space-y-3">
+          <div className="space-y-3">
             <DetailRow
               icon={
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,32 +214,11 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
               }
               label="住所"
               value={
-                <a
-                  href={googleMapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block w-fit max-w-full break-words text-[#65BBE9] hover:text-[#4AA8D9] hover:underline"
-                >
-                  {pharmacy.address}
-                </a>
+                <span className="inline-block w-fit max-w-full break-words">
+                  {formatPharmacyAddress(pharmacy.address, pharmacy.prefecture)}
+                </span>
               }
             />
-
-            {pharmacy.phone && (
-              <DetailRow
-                icon={
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                }
-                label="電話番号"
-                value={
-                  <a href={`tel:${pharmacy.phone}`} className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline">
-                    {pharmacy.phone}
-                  </a>
-                }
-              />
-            )}
 
             {pharmacy.businessHours && (
               <DetailRow
@@ -195,70 +228,39 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
                   </svg>
                 }
                 label="開局時間"
-                value={pharmacy.businessHours}
+                value={
+                  <div>
+                    <p>
+                      {compactHours
+                        ? (likelyOpen ? `本日 ${compactHours}（開局中の目安）` : compactHours)
+                        : pharmacy.businessHours.normalize('NFKC')}
+                    </p>
+                    {showRawHours && (
+                      <details className="mt-1">
+                        <summary className="text-sm text-[#4AA8D9] cursor-pointer">
+                          すべての開局時間
+                        </summary>
+                        <p className="mt-1 text-sm text-gray-500">{rawHours}</p>
+                      </details>
+                    )}
+                  </div>
+                }
               />
             )}
 
-            {(pharmacy.pharmacistFemale !== undefined || pharmacy.pharmacistMale !== undefined || pharmacy.pharmacistOther !== undefined) && (
+            {(pharmacy.pharmacistFemale ?? 0) > 0 && (
               <DetailRow
                 icon={
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 }
-                label="販売可能薬剤師"
-                value={
-                  <div className="flex flex-wrap gap-2">
-                    {pharmacy.pharmacistFemale !== undefined && pharmacy.pharmacistFemale > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#EBF6FC] text-[#4AA8D9] rounded text-sm">
-                        女性 {pharmacy.pharmacistFemale}名
-                      </span>
-                    )}
-                    {pharmacy.pharmacistMale !== undefined && pharmacy.pharmacistMale > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">
-                        男性 {pharmacy.pharmacistMale}名
-                      </span>
-                    )}
-                    {pharmacy.pharmacistOther !== undefined && pharmacy.pharmacistOther > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm">
-                        その他 {pharmacy.pharmacistOther}名
-                      </span>
-                    )}
-                    {((pharmacy.pharmacistFemale || 0) + (pharmacy.pharmacistMale || 0) + (pharmacy.pharmacistOther || 0)) > 0 && (
-                      <span className="text-gray-500 text-sm">
-                        （計 {(pharmacy.pharmacistFemale || 0) + (pharmacy.pharmacistMale || 0) + (pharmacy.pharmacistOther || 0)}名）
-                      </span>
-                    )}
-                  </div>
-                }
+                label="女性薬剤師"
+                value={`${pharmacy.pharmacistFemale}名`}
               />
             )}
 
-            {pharmacy.afterHoursService && (
-              <DetailRow
-                icon={
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                  </svg>
-                }
-                label="時間外対応"
-                value={
-                  <div>
-                    <span>{pharmacy.afterHoursService}</span>
-                    {pharmacy.afterHoursPhone && (
-                      <div className="mt-1">
-                        <span className="text-sm text-gray-500">時間外電話: </span>
-                        <a href={`tel:${pharmacy.afterHoursPhone}`} className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline">
-                          {pharmacy.afterHoursPhone}
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                }
-              />
-            )}
-
-            {pharmacy.advanceCallRequired && (
+            {pharmacy.advanceCallRequired === '要' && (
               <DetailRow
                 icon={
                   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -266,90 +268,24 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
                   </svg>
                 }
                 label="事前電話連絡"
-                value={pharmacy.advanceCallRequired}
-              />
-            )}
-
-            {pharmacy.privacyMeasures && (
-              <DetailRow
-                icon={
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                }
-                label="プライバシー確保策"
-                value={pharmacy.privacyMeasures}
-              />
-            )}
-
-            {pharmacy.website && (
-              <DetailRow
-                icon={
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                  </svg>
-                }
-                label="ホームページ"
-                value={
-                  <a
-                    href={normalizeUrl(pharmacy.website)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline break-all"
-                  >
-                    {pharmacy.website}
-                  </a>
-                }
-              />
-            )}
-
-            {pharmacy.notes && (
-              <DetailRow
-                icon={
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                }
-                label="備考"
-                value={pharmacy.notes}
-              />
-            )}
-
-            {pharmacy.pharmacyNumber && (
-              <DetailRow
-                icon={
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
-                  </svg>
-                }
-                label="薬局等番号"
-                value={<span className="text-gray-600 font-mono text-sm">{pharmacy.pharmacyNumber}</span>}
+                value="訪問前に電話が必要です"
               />
             )}
           </div>
 
-          {/* 案内ボックス */}
-          <div className="mt-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
+          <div className="mt-4 p-3 bg-[#EBF6FC] border border-[#65BBE9]/30 rounded-lg">
+            <p className="text-sm text-gray-800">
               <strong>訪問前に電話するとスムーズです</strong>
             </p>
-            <p className="text-sm text-blue-700 mt-1">
-              在庫の確認や、到着時間を伝えておくと安心です。薬剤師が丁寧に対応してくれます。
-            </p>
-          </div>
-
-          {/* 行動ガイド */}
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm font-medium text-gray-700 mb-2">この薬局に行くまでの流れ</p>
-            <ol className="text-sm text-gray-600 space-y-1.5 list-decimal list-inside">
+            <ol className="mt-1.5 text-sm text-gray-600 space-y-0.5 list-decimal list-inside">
               <li>電話で在庫を確認する</li>
-              <li>本人確認書類（免許証・マイナンバーカード等）を持参</li>
-              <li>薬剤師の説明を受けて、その場で服用</li>
+              <li>本人確認書類を持参する</li>
+              <li>薬剤師の説明を受けて、その場で服用する</li>
             </ol>
           </div>
 
           {/* アクションボタン */}
-          <div className="mt-6 grid grid-cols-2 gap-3">
+          <div className="mt-4 grid grid-cols-2 gap-3">
             <a
               href={googleMapsUrl}
               target="_blank"
@@ -376,6 +312,7 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
 
           {/* 共有ボタン */}
           <button
+            type="button"
             onClick={handleShare}
             className="mt-3 flex items-center justify-center gap-2 w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
           >
@@ -385,18 +322,135 @@ export function PharmacyDetail({ pharmacy, onClose }: PharmacyDetailProps) {
             {copied ? 'コピーしました' : '共有する'}
           </button>
 
-          {pharmacy.phone && (
+          <details className="mt-4 rounded-lg border border-gray-200 bg-white">
+            <summary className="cursor-pointer px-4 py-3 text-sm text-gray-700">
+              その他の情報
+            </summary>
+            <div className="px-4 pb-4 space-y-3">
+              {pharmacy.privacyMeasures && (
+                <DetailRow
+                  icon={
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  }
+                  label="プライバシー確保策"
+                  value={pharmacy.privacyMeasures}
+                />
+              )}
+              {(pharmacy.pharmacistMale !== undefined || pharmacy.pharmacistOther !== undefined) && (
+                <DetailRow
+                  icon={
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  }
+                  label="販売可能薬剤師"
+                  value={
+                    <div className="flex flex-wrap gap-2">
+                      {(pharmacy.pharmacistFemale ?? 0) > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 bg-[#EBF6FC] text-[#4AA8D9] rounded text-sm">
+                          女性 {pharmacy.pharmacistFemale}名
+                        </span>
+                      )}
+                      {(pharmacy.pharmacistMale ?? 0) > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 bg-[#EBF6FC] text-[#4AA8D9] rounded text-sm">
+                          男性 {pharmacy.pharmacistMale}名
+                        </span>
+                      )}
+                      {(pharmacy.pharmacistOther ?? 0) > 0 && (
+                        <span className="inline-flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm">
+                          その他 {pharmacy.pharmacistOther}名
+                        </span>
+                      )}
+                    </div>
+                  }
+                />
+              )}
+              {pharmacy.afterHoursService && (
+                <DetailRow
+                  icon={
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                  }
+                  label="時間外対応"
+                  value={
+                    <div>
+                      <span>{pharmacy.afterHoursService}</span>
+                      {pharmacy.afterHoursPhone && (
+                        <div className="mt-1">
+                          <span className="text-sm text-gray-500">時間外電話: </span>
+                          <a href={toTelHref(pharmacy.afterHoursPhone)} className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline">
+                            {formatPhoneDisplay(pharmacy.afterHoursPhone)}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  }
+                />
+              )}
+              {pharmacy.website && (
+                <DetailRow
+                  icon={
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                    </svg>
+                  }
+                  label="ホームページ"
+                  value={
+                    <a
+                      href={normalizeUrl(pharmacy.website)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#65BBE9] hover:text-[#4AA8D9] hover:underline break-all"
+                    >
+                      {pharmacy.website}
+                    </a>
+                  }
+                />
+              )}
+              {pharmacy.notes && (
+                <DetailRow
+                  icon={
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  }
+                  label="備考"
+                  value={pharmacy.notes}
+                />
+              )}
+              {pharmacy.pharmacyNumber && (
+                <DetailRow
+                  icon={
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+                    </svg>
+                  }
+                  label="薬局等番号"
+                  value={<span className="text-gray-600 font-mono text-sm">{pharmacy.pharmacyNumber}</span>}
+                />
+              )}
+            </div>
+          </details>
+        </div>
+        </div>
+
+        {pharmacy.phone && (
+          <div className="shrink-0 border-t border-gray-200 bg-white px-4 py-3">
             <a
-              href={`tel:${pharmacy.phone}`}
-              className="mt-3 flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#65BBE9] text-white rounded-lg hover:bg-[#4AA8D9] transition-colors"
+              href={toTelHref(pharmacy.phone)}
+              className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-[#65BBE9] text-white rounded-lg hover:bg-[#4AA8D9] transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
-              電話で問い合わせる
+              <span className="text-sm font-medium">電話する</span>
+              <span className="text-sm tracking-wide">{formatPhoneDisplay(pharmacy.phone)}</span>
             </a>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -43,12 +43,37 @@ const faqItems: FAQItem[] = [
   },
 ];
 
-export function FAQ() {
+interface FAQProps {
+  preview?: boolean;
+}
+
+export function FAQ({ preview = false }: FAQProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [revealed, setRevealed] = useState(!preview);
 
   const toggle = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
+
+  if (preview && !revealed) {
+    return (
+      <section id="faq" className="bg-white rounded-xl shadow-sm px-4 py-3 mt-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-sm font-bold text-gray-800">よくある質問</h2>
+            <p className="text-xs text-gray-500 mt-0.5">値段・飲み方・年齢など</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setRevealed(true)}
+            className="shrink-0 text-sm text-[#4AA8D9] hover:underline"
+          >
+            見る
+          </button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="faq" className="bg-white rounded-xl shadow-sm p-6 mt-6">
@@ -62,9 +87,12 @@ export function FAQ() {
         {faqItems.map((item, index) => (
           <div key={index}>
             <button
+              type="button"
               onClick={() => toggle(index)}
               className="w-full flex items-center justify-between py-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#65BBE9] rounded"
               aria-expanded={openIndex === index}
+              aria-controls={`faq-answer-${index}`}
+              id={`faq-question-${index}`}
             >
               <span className="font-medium text-gray-800 pr-4">
                 {item.question}
@@ -76,6 +104,7 @@ export function FAQ() {
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -86,8 +115,11 @@ export function FAQ() {
               </svg>
             </button>
             <div
+              id={`faq-answer-${index}`}
+              role="region"
+              aria-labelledby={`faq-question-${index}`}
               className={`overflow-hidden transition-all duration-300 ease-out ${
-                openIndex === index ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                openIndex === index ? 'max-h-[40rem] opacity-100' : 'max-h-0 opacity-0'
               }`}
             >
               <p className="pb-4 text-gray-600 text-sm leading-relaxed">

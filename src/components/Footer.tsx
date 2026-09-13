@@ -1,10 +1,66 @@
-export function Footer() {
+import { useState } from 'react';
+
+function ConsultationLinks() {
   return (
-    <footer className="bg-gray-800 text-gray-300 py-8">
-      <div className="max-w-7xl mx-auto px-4">
-        {/* メインコンテンツ */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {/* このサイトについて */}
+    <ul className="text-sm space-y-2">
+      <li>
+        <a
+          href="https://www.npa.go.jp/higaisya/seihanzai/seihanzai.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center min-h-8 text-[#65BBE9] hover:text-[#EBF6FC] underline"
+        >
+          性犯罪被害相談電話 #8103（ハートさん）
+        </a>
+        <p className="text-xs text-gray-400 mt-0.5">警察庁 - 各都道府県警察の相談窓口</p>
+      </li>
+      <li>
+        <a
+          href="https://www.gender.go.jp/policy/no_violence/date_dv/index.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center min-h-8 text-[#65BBE9] hover:text-[#EBF6FC] underline"
+        >
+          デートDVって?
+        </a>
+        <p className="text-xs text-gray-400 mt-0.5">内閣府男女共同参画局</p>
+      </li>
+    </ul>
+  );
+}
+
+export function Footer() {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <footer className="bg-gray-800 text-gray-300">
+      <div className="max-w-7xl mx-auto px-4 py-4 md:py-8">
+        <div className="md:hidden flex items-start justify-between gap-3">
+          <p className="text-sm leading-relaxed">
+            厚労省の薬局一覧をもとに検索できます
+          </p>
+          <button
+            type="button"
+            onClick={() => setExpanded((current) => !current)}
+            className="shrink-0 text-sm text-[#65BBE9] hover:text-[#EBF6FC]"
+            aria-expanded={expanded}
+            aria-controls="footer-details"
+          >
+            {expanded ? 'とじる' : '詳しく'}
+          </button>
+        </div>
+
+        <section className="md:hidden mt-3" aria-labelledby="consultation-heading-mobile">
+          <h2 id="consultation-heading-mobile" className="text-white font-bold mb-2">
+            相談窓口
+          </h2>
+          <ConsultationLinks />
+        </section>
+
+        <div
+          id="footer-details"
+          className={`${expanded ? 'grid mt-6' : 'hidden'} md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8`}
+        >
           <div>
             <h2 className="text-white font-bold mb-3">このサイトについて</h2>
             <p className="text-sm leading-relaxed">
@@ -25,7 +81,6 @@ export function Footer() {
             </p>
           </div>
 
-          {/* レボノルゲストレル（緊急避妊薬）について */}
           <div>
             <h2 className="text-white font-bold mb-3">緊急避妊薬について</h2>
             <ul className="text-sm space-y-1.5">
@@ -61,7 +116,6 @@ export function Footer() {
             </a>
           </div>
 
-          {/* ご注意・相談窓口 */}
           <div>
             <h2 className="text-white font-bold mb-3">ご注意</h2>
             <ul className="text-sm space-y-2">
@@ -73,38 +127,15 @@ export function Footer() {
               </li>
             </ul>
 
-            {/* 相談窓口 */}
-            <h2 className="text-white font-bold mt-6 mb-3">相談窓口</h2>
-            <ul className="text-sm space-y-2">
-              <li>
-                <a
-                  href="https://www.npa.go.jp/higaisya/seihanzai/seihanzai.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#65BBE9] hover:text-[#EBF6FC] underline"
-                >
-                  性犯罪被害相談電話 #8103（ハートさん）
-                </a>
-                <p className="text-xs text-gray-400 mt-0.5">警察庁 - 各都道府県警察の相談窓口</p>
-              </li>
-              <li>
-                <a
-                  href="https://www.gender.go.jp/policy/no_violence/date_dv/index.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#65BBE9] hover:text-[#EBF6FC] underline"
-                >
-                  デートDVって?
-                </a>
-                <p className="text-xs text-gray-400 mt-0.5">内閣府男女共同参画局</p>
-              </li>
-            </ul>
+            <div className="hidden md:block">
+              <h2 className="text-white font-bold mt-6 mb-3">相談窓口</h2>
+              <ConsultationLinks />
+            </div>
           </div>
         </div>
 
-        {/* データ出典・コピーライト */}
-        <div className="mt-8 pt-6 border-t border-gray-700">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
+        <div className={`${expanded ? 'mt-8 pt-6' : 'mt-4 pt-3 md:mt-8 md:pt-6'} border-t border-gray-700`}>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 text-sm">
             <p>
               データ出典:
               <a

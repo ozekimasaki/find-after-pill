@@ -33,12 +33,14 @@ function formatMeridiemTime(meridiem: string, hour: string, minute = '00'): stri
 function normalizeBusinessHours(hours: string): string {
   return hours
     .normalize('NFKC')
+    .replace(/365,?日/g, '年中無休')
     .replace(/月から金(?:曜日)?/g, '月-金')
     .replace(/月から土(?:曜日)?/g, '月-土')
     .replace(/月から日(?:曜日)?/g, '月-日')
     .replace(/([月火水木金土日])から([月火水木金土日])/g, '$1-$2')
     .replace(/平日/g, '月-金')
     .replace(/([月火水木金土日])曜(?:日)?/g, '$1')
+    .replace(/[（(]([月火水木金土日祝])[）)]/g, '$1')
     .replace(/祝日/g, '祝')
     .replace(/(午前|午後)(\d{1,2})時半(?!間)/g, (_, meridiem: string, hour: string) => formatMeridiemTime(meridiem, hour, '30'))
     .replace(/(\d{1,2})時(?=\d{1,2}時)/g, '$1:00-')
@@ -48,7 +50,7 @@ function normalizeBusinessHours(hours: string): string {
     .replace(/([月火水木金土日祝・,／/]+)[／/](?=(?:午前|午後|\d))/g, '$1:')
     .replace(/(\d{1,2}:\d{2})から(?=\d{1,2}:\d{2})/g, '$1-')
     .replace(/[‐‑‒–—―ー−~〜～∼]/g, '-')
-    .replace(/[：]/g, ':')
+    .replace(/[：ː]/g, ':')
     .replace(/((?:\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2})(?:\s*[\/,]\s*\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2})*)\(([^()]*[月火水木金土日祝][^()]*)\)/g, '$2:$1')
     .replace(/[､、，；;｡。]/g, ',')
     .replace(/[（(]/g, ',')
@@ -60,6 +62,24 @@ function normalizeBusinessHours(hours: string): string {
     .replace(/-+/g, '-')
     .replace(/(\d)([月火水木金土日祝])/g, '$1,$2')
     .replace(/([休閉])([月火水木金土日祝])/g, '$1,$2');
+}
+
+function hasClockRange(value: string): boolean {
+  return /(\d{1,2})(?::(\d{2}))?\s*-\s*(\d{1,2})(?::(\d{2}))?/.test(value);
+}
+
+function nextDayContext(between: string, current: string): string {
+  const withoutEveryDay = between.replace(/年中無休|定休日なし|休業日なし|24時間/g, '');
+  if (DAY_CONTEXT_PATTERN.test(withoutEveryDay)) {
+    return withoutEveryDay;
+  }
+  if (ALWAYS_OPEN_PATTERN.test(between) || /24時間/.test(between)) {
+    return '';
+  }
+  if (DAY_CONTEXT_PATTERN.test(between)) {
+    return between;
+  }
+  return current;
 }
 
 function isClosedContext(context: string): boolean {
@@ -120,9 +140,7 @@ export function hasWeekendOrHolidayHours(businessHours?: string | null): boolean
   for (const match of normalized.matchAll(TIME_RANGE_PATTERN)) {
     const index = match.index ?? 0;
     const between = normalized.slice(cursor, index);
-    if (DAY_CONTEXT_PATTERN.test(between)) {
-      currentContext = between;
-    }
+    currentContext = nextDayContext(between, currentContext);
     cursor = index + match[0].length;
 
     if (WEEKEND_OR_HOLIDAY_PATTERN.test(currentContext) && !isClosedContext(currentContext)) {
@@ -145,7 +163,7 @@ export function hasLateBusinessHours(businessHours?: string | null): boolean {
     return false;
   }
 
-  if (ALWAYS_OPEN_PATTERN.test(normalized)) {
+  if (ALWAYS_OPEN_PATTERN.test(normalized) && !hasClockRange(normalized)) {
     return true;
   }
 
@@ -165,4 +183,182 @@ export function supportsAfterHoursFilter(pharmacy: Pick<Pharmacy, 'afterHoursSer
     hasWeekendOrHolidayHours(pharmacy.businessHours) ||
     hasLateBusinessHours(pharmacy.businessHours)
   );
+}
+
+const WEEKDAY_CHARS = ['日', '月', '火', '水', '木', '金', '土'] as const;
+
+function expandDaysFromContext(context: string): Set<number> | null {
+  const days = new Set<number>();
+  const rangePattern = /([月火水木金土日])-([月火水木金土日])/g;
+
+  for (const match of context.matchAll(rangePattern)) {
+    const start = WEEKDAY_CHARS.indexOf(match[1] as (typeof WEEKDAY_CHARS)[number]);
+    const end = WEEKDAY_CHARS.indexOf(match[2] as (typeof WEEKDAY_CHARS)[number]);
+    if (start < 0 || end < 0) {
+      continue;
+    }
+    let cursor = start;
+    for (let step = 0; step < 7; step += 1) {
+      days.add(cursor);
+      if (cursor === end) {
+        break;
+      }
+      cursor = (cursor + 1) % 7;
+    }
+  }
+
+  for (const char of context) {
+    const index = WEEKDAY_CHARS.indexOf(char as (typeof WEEKDAY_CHARS)[number]);
+    if (index >= 0) {
+      days.add(index);
+    }
+  }
+
+  if (days.size === 0) {
+    return null;
+  }
+  return days;
+}
+
+function isMinutesInRange(nowMinutes: number, start: number, end: number): boolean {
+  if (end <= start) {
+    return nowMinutes >= start || nowMinutes < end;
+  }
+  return nowMinutes >= start && nowMinutes < end;
+}
+
+/**
+ * 開局時間文字列から「いま開局中の可能性」を推定する。
+ * 祝日や臨時休業は判定できないため、バッジ表示の目安に留める。
+ */
+export function isLikelyOpenNow(businessHours?: string | null, now: Date = new Date()): boolean {
+  if (!businessHours) {
+    return false;
+  }
+
+  const normalized = normalizeBusinessHours(businessHours);
+  if (!normalized) {
+    return false;
+  }
+
+  if (ALWAYS_OPEN_PATTERN.test(normalized) && !hasClockRange(normalized)) {
+    return true;
+  }
+
+  const { dayIndex, minutes } = getJstDayAndMinutes(now);
+  let currentContext = '';
+  let cursor = 0;
+
+  for (const match of normalized.matchAll(TIME_RANGE_PATTERN)) {
+    const index = match.index ?? 0;
+    const between = normalized.slice(cursor, index);
+    currentContext = nextDayContext(between, currentContext);
+    cursor = index + match[0].length;
+
+    if (isClosedContext(currentContext)) {
+      continue;
+    }
+
+    const days = expandDaysFromContext(currentContext);
+    if (days && !days.has(dayIndex)) {
+      continue;
+    }
+
+    const start = toMinutes(match[1], match[2]);
+    const end = toMinutes(match[3], match[4]);
+    if (isMinutesInRange(minutes, start, end)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function formatClock(hour: string, minute?: string): string {
+  return `${Number(hour)}:${(minute ?? '00').padStart(2, '0')}`;
+}
+
+function isPlausibleClock(hour: string, minute?: string): boolean {
+  const h = Number(hour);
+  const m = Number(minute ?? '0');
+  return h >= 0 && h <= 24 && m >= 0 && m <= 59;
+}
+
+/**
+ * カード向けに、きょう該当する開局時間だけを短く表示する。
+ */
+export function formatTodayHours(businessHours?: string | null, now: Date = new Date()): string {
+  if (!businessHours) {
+    return '';
+  }
+
+  const cleaned = businessHours
+    .normalize('NFKC')
+    .replace(/[ː]/g, ':')
+    .replace(/[（(][^)）]*\d{1,2}\/\d{1,2}[^)）]*[)）]/g, ',');
+
+  const raw = cleaned.replace(/\s+/g, '');
+  const normalized = normalizeBusinessHours(cleaned);
+  if (!normalized) {
+    return raw.length > 20 ? `${raw.slice(0, 20)}…` : raw;
+  }
+
+  if (/24時間/.test(normalized) && !/\d{1,2}:\d{2}\s*-\s*\d{1,2}/.test(normalized)) {
+    return '24時間';
+  }
+
+  const { dayIndex } = getJstDayAndMinutes(now);
+  const ranges: string[] = [];
+  let currentContext = '';
+  let cursor = 0;
+  let sawTodayClosed = false;
+  let sawDaySpecific = false;
+
+  for (const match of normalized.matchAll(TIME_RANGE_PATTERN)) {
+    const index = match.index ?? 0;
+    const between = normalized.slice(cursor, index);
+    currentContext = nextDayContext(between, currentContext);
+    cursor = index + match[0].length;
+
+    const startHour = match[1] ?? '0';
+    const endHour = match[3] ?? '0';
+    if (!isPlausibleClock(startHour, match[2]) || !isPlausibleClock(endHour, match[4])) {
+      continue;
+    }
+
+    const days = expandDaysFromContext(currentContext);
+    if (days) {
+      sawDaySpecific = true;
+      if (!days.has(dayIndex)) {
+        continue;
+      }
+    }
+
+    if (isClosedContext(currentContext)) {
+      sawTodayClosed = true;
+      continue;
+    }
+
+    ranges.push(`${formatClock(startHour, match[2])}-${formatClock(endHour, match[4])}`);
+  }
+
+  const unique = [...new Set(ranges)].sort((a, b) => {
+    const startHour = (value: string) => Number(value.split('-')[0]?.split(':')[0] ?? '0');
+    const score = (hour: number) => (hour < 5 ? hour + 24 : hour);
+    return score(startHour(a)) - score(startHour(b));
+  });
+  if (unique.length > 0) {
+    const shown = unique.slice(0, 2).join(' / ');
+    return unique.length > 2 ? `${shown} 他` : shown;
+  }
+
+  if (sawTodayClosed || sawDaySpecific) {
+    return '本日休み';
+  }
+
+  const first = raw.split(/[､、,／/]/)[0] ?? raw;
+  if (/年中無休|定休日なし/.test(first) && first.length > 16) {
+    return first.replace(/年中無休/, '').slice(0, 16);
+  }
+  return first.length > 20 ? `${first.slice(0, 20)}…` : first;
 }

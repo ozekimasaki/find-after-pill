@@ -1,13 +1,30 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { 
-  Pharmacy, 
-  PharmacyMeta, 
-  PharmacyWithDistance, 
+import type {
+  Pharmacy,
+  PharmacyMeta,
+  PharmacyWithDistance,
   SearchParams,
-  GeoLocation 
+  GeoLocation
 } from '../types/pharmacy';
+import { PREFECTURES } from '../types/pharmacy';
 import { calculateDistance } from '../utils/distance';
-import { supportsAfterHoursFilter } from '../utils/pharmacyAvailability';
+import { inferPrefecture } from '../utils/prefectureFromLocation';
+import { isLikelyInJapan } from '../utils/japanBounds';
+import { isLikelyOpenNow, supportsAfterHoursFilter } from '../utils/pharmacyAvailability';
+import { pharmacyMatchesQuery } from '../utils/searchText';
+import { extractMunicipality, municipalityGroupKey, municipalityMatches, shouldGroupPharmaciesByMunicipality } from '../utils/municipality';
+import { compareMunicipalityNames } from '../utils/municipalityRank';
+import { matchKnownMunicipality } from '../utils/reverseMunicipality';
+import { dedupePharmacies } from '../utils/pharmacyIdentity';
+
+export type LocationFallback = 'none' | 'ungeocoded' | 'prefecture';
+
+export interface LocationSearchInfo {
+  nearbyCount: number;
+  fallback: LocationFallback;
+  prefecture: string | null;
+  nearbyPrefectures: string[];
+}
 
 interface UsePharmaciesReturn {
   pharmacies: PharmacyWithDistance[];
@@ -18,19 +35,31 @@ interface UsePharmaciesReturn {
   setSearchParams: (params: Partial<SearchParams>) => void;
   refetch: () => void;
   prefectureCounts: Record<string, number>;
+  locationSearch: LocationSearchInfo;
+  loadedCount: number;
+  municipalityCounts: Record<string, number>;
 }
 
 const API_BASE = '/api';
 
+function prefectureSortIndex(prefecture: string): number {
+  const index = (PREFECTURES as readonly string[]).indexOf(prefecture);
+  return index === -1 ? PREFECTURES.length : index;
+}
+
 /**
  * 薬局データを取得・管理するカスタムフック
  */
-export function usePharmacies(userLocation?: GeoLocation | null): UsePharmaciesReturn {
+export function usePharmacies(
+  userLocation?: GeoLocation | null,
+  initialParams: SearchParams = {},
+  preferredMunicipality?: string | null,
+): UsePharmaciesReturn {
   const [allPharmacies, setAllPharmacies] = useState<Pharmacy[]>([]);
   const [meta, setMeta] = useState<PharmacyMeta | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchParams, setSearchParamsState] = useState<SearchParams>({});
+  const [searchParams, setSearchParamsState] = useState<SearchParams>(initialParams);
 
   // データ取得
   const fetchPharmacies = useCallback(async () => {
@@ -45,11 +74,11 @@ export function usePharmacies(userLocation?: GeoLocation | null): UsePharmaciesR
       }
 
       const data = await response.json();
-      setAllPharmacies(data.pharmacies || []);
+      setAllPharmacies(dedupePharmacies(data.pharmacies || []));
       setMeta(data.meta || null);
     } catch (err) {
       console.error('Failed to fetch pharmacies:', err);
-      setError('薬局データの取得に失敗しました');
+      setError('薬局データの取得に失敗しました。通信状況を確認して再度お試しください');
     } finally {
       setLoading(false);
     }
@@ -66,21 +95,44 @@ export function usePharmacies(userLocation?: GeoLocation | null): UsePharmaciesR
   }, []);
 
   // フィルタリング・ソート済みの薬局リスト
-  const pharmacies = useMemo(() => {
+  const { pharmacies, locationSearch, municipalityCounts } = useMemo(() => {
     let filtered = [...allPharmacies];
+    const skipPrefectureFilter = Boolean(
+      userLocation && searchParams.radius && searchParams.prefectureIsHint
+    );
 
-    // 都道府県フィルター
-    if (searchParams.prefecture) {
+    // 現在地の近傍検索中は、推測した都道府県で他県を落とさない
+    if (searchParams.prefecture && !skipPrefectureFilter) {
       filtered = filtered.filter(p => p.prefecture === searchParams.prefecture);
     }
 
-    // フリーワード検索
+    // 市区町村（チップ・現在地の自動絞り込み）
+    const targetPrefForCity = searchParams.prefecture
+      || (userLocation ? inferPrefecture(userLocation.lat, userLocation.lng) : null);
+    const cityCounts: Record<string, number> = {};
+    if (targetPrefForCity) {
+      for (const pharmacy of allPharmacies) {
+        if (pharmacy.prefecture !== targetPrefForCity) {
+          continue;
+        }
+        const city = extractMunicipality(pharmacy.address, pharmacy.prefecture);
+        if (city) {
+          cityCounts[city] = (cityCounts[city] || 0) + 1;
+        }
+      }
+    }
+    const matchedPreferred = preferredMunicipality
+      ? matchKnownMunicipality(preferredMunicipality, cityCounts)
+      : null;
+    const municipalityFilter = searchParams.municipality
+      ? searchParams.municipality
+      : (searchParams.municipality === undefined && !searchParams.query
+        ? matchedPreferred
+        : null);
+
+    // フリーワード検索（ひらがな/カタカナ・電話番号も対象）
     if (searchParams.query) {
-      const query = searchParams.query.toLowerCase();
-      filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(query) ||
-        p.address.toLowerCase().includes(query)
-      );
+      filtered = filtered.filter((p) => pharmacyMatchesQuery(p, searchParams.query!));
     }
 
     // 追加フィルター
@@ -102,10 +154,22 @@ export function usePharmacies(userLocation?: GeoLocation | null): UsePharmaciesR
         p.privacyMeasures && p.privacyMeasures.includes('個室')
       );
     }
+    if (searchParams.openNowOnly) {
+      filtered = filtered.filter((p) => isLikelyOpenNow(p.businessHours));
+    }
 
-    // 距離計算と位置フィルター
+    const inferredPrefecture = userLocation
+      ? inferPrefecture(userLocation.lat, userLocation.lng)
+      : null;
+    const fallbackPrefecture = searchParams.prefecture || inferredPrefecture;
+
     const withDistance: PharmacyWithDistance[] = filtered.map(p => {
-      if (userLocation && p.lat !== null && p.lng !== null) {
+      if (
+        userLocation &&
+        p.lat !== null &&
+        p.lng !== null &&
+        isLikelyInJapan(p.lat, p.lng)
+      ) {
         return {
           ...p,
           distance: calculateDistance(
@@ -119,34 +183,138 @@ export function usePharmacies(userLocation?: GeoLocation | null): UsePharmaciesR
       return { ...p, distance: undefined };
     });
 
-    // 半径フィルター
     let result = withDistance;
+    let nearbyCount = 0;
+    let fallback: LocationFallback = 'none';
+    let nearbyPrefectures: string[] = [];
+
     if (userLocation && searchParams.radius) {
-      result = withDistance.filter(p => 
+      const nearby = withDistance.filter(p =>
         p.distance !== undefined && p.distance <= searchParams.radius!
+      );
+      nearbyCount = nearby.length;
+      nearbyPrefectures = [...new Set(nearby.map((pharmacy) => pharmacy.prefecture))]
+        .sort((a, b) => prefectureSortIndex(a) - prefectureSortIndex(b));
+
+      if (nearby.length === 0 && fallbackPrefecture) {
+        result = withDistance.filter(p => p.prefecture === fallbackPrefecture);
+        fallback = result.length > 0 ? 'prefecture' : 'none';
+      } else {
+        const ungeocoded = fallbackPrefecture
+          ? withDistance.filter(p =>
+            p.distance === undefined && p.prefecture === fallbackPrefecture
+          )
+          : [];
+        result = nearby.concat(ungeocoded);
+        fallback = ungeocoded.length > 0 ? 'ungeocoded' : 'none';
+      }
+    } else {
+      nearbyCount = withDistance.filter(p => p.distance !== undefined).length;
+    }
+
+    const municipalityCounts: Record<string, number> = {};
+    for (const pharmacy of result) {
+      const city = extractMunicipality(pharmacy.address, pharmacy.prefecture);
+      if (city) {
+        municipalityCounts[city] = (municipalityCounts[city] || 0) + 1;
+      }
+    }
+
+    if (municipalityFilter) {
+      result = result.filter((pharmacy) =>
+        municipalityMatches(
+          extractMunicipality(pharmacy.address, pharmacy.prefecture),
+          municipalityFilter,
+        )
       );
     }
 
-    // ソート（距離がある場合は距離順、なければ都道府県→名前順）
-    if (userLocation) {
+    const openIds = new Set(
+      result.filter(p => isLikelyOpenNow(p.businessHours)).map(p => p.id)
+    );
+
+    const compareOpenThenName = (a: PharmacyWithDistance, b: PharmacyWithDistance) => {
+      const aOpen = openIds.has(a.id);
+      const bOpen = openIds.has(b.id);
+      if (aOpen !== bOpen) {
+        return aOpen ? -1 : 1;
+      }
+      return a.name.localeCompare(b.name, 'ja');
+    };
+
+    const groupByMunicipality = shouldGroupPharmaciesByMunicipality(
+      searchParams.query,
+      municipalityFilter,
+      municipalityCounts,
+      fallback === 'prefecture' || (!userLocation && !!searchParams.prefecture),
+    );
+
+    if (userLocation && !groupByMunicipality) {
       result.sort((a, b) => {
-        if (a.distance !== undefined && b.distance !== undefined) {
-          return a.distance - b.distance;
+        const aHas = a.distance !== undefined;
+        const bHas = b.distance !== undefined;
+        if (aHas && bHas) {
+          const delta = a.distance! - b.distance!;
+          if (Math.abs(delta) >= 0.05) {
+            return delta;
+          }
+        } else if (aHas !== bHas) {
+          return aHas ? -1 : 1;
         }
-        if (a.distance !== undefined) return -1;
-        if (b.distance !== undefined) return 1;
-        return 0;
+        return compareOpenThenName(a, b);
+      });
+    } else if (groupByMunicipality) {
+      const collapseParents = !municipalityFilter;
+      const cityCounts: Record<string, number> = {};
+      for (const pharmacy of result) {
+        const city = extractMunicipality(pharmacy.address, pharmacy.prefecture);
+        const key = municipalityGroupKey(city, collapseParents);
+        cityCounts[key] = (cityCounts[key] || 0) + 1;
+      }
+      const preferredCity = preferredMunicipality
+        ? matchKnownMunicipality(preferredMunicipality, cityCounts)
+          || (collapseParents
+            ? matchKnownMunicipality(
+              municipalityGroupKey(preferredMunicipality, true),
+              cityCounts,
+            )
+            : null)
+        : null;
+      result.sort((a, b) => {
+        const cityA = extractMunicipality(a.address, a.prefecture);
+        const cityB = extractMunicipality(b.address, b.prefecture);
+        const groupA = municipalityGroupKey(cityA, collapseParents);
+        const groupB = municipalityGroupKey(cityB, collapseParents);
+        const groupDelta = compareMunicipalityNames(groupA, groupB, preferredCity, cityCounts);
+        if (groupDelta !== 0) {
+          return groupDelta;
+        }
+        if (collapseParents && cityA && cityB && cityA !== cityB) {
+          return compareMunicipalityNames(cityA, cityB, null, municipalityCounts);
+        }
+        return compareOpenThenName(a, b);
       });
     } else {
       result.sort((a, b) => {
-        const prefCompare = a.prefecture.localeCompare(b.prefecture);
-        if (prefCompare !== 0) return prefCompare;
-        return a.name.localeCompare(b.name);
+        const prefDelta = prefectureSortIndex(a.prefecture) - prefectureSortIndex(b.prefecture);
+        if (prefDelta !== 0) {
+          return prefDelta;
+        }
+        return a.name.localeCompare(b.name, 'ja');
       });
     }
 
-    return result;
-  }, [allPharmacies, searchParams, userLocation]);
+    return {
+      pharmacies: result,
+      municipalityCounts,
+      locationSearch: {
+        nearbyCount,
+        fallback,
+        prefecture: fallbackPrefecture,
+        nearbyPrefectures,
+      },
+    };
+  }, [allPharmacies, searchParams, userLocation, preferredMunicipality]);
 
   // 都道府県ごとの薬局数
   const prefectureCounts = useMemo(() => {
@@ -166,5 +334,8 @@ export function usePharmacies(userLocation?: GeoLocation | null): UsePharmaciesR
     setSearchParams,
     refetch: fetchPharmacies,
     prefectureCounts,
+    locationSearch,
+    loadedCount: allPharmacies.length,
+    municipalityCounts,
   };
 }
