@@ -84,6 +84,11 @@ html {
   background-image: url(https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png);
 }
 
+/* Leaflet panes/controls use z-index 200–1000. Contain them so sticky search stays on top. */
+.leaflet-container {
+  z-index: 0;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

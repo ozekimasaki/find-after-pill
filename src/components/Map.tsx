@@ -191,7 +191,7 @@ export function Map({ pharmacies, userLocation, onSelectPharmacy, onShowList }: 
   }
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative z-0 isolate h-full w-full">
       {hiddenCount > 0 && (
         <p className="absolute top-3 left-1/2 -translate-x-1/2 z-[1000] px-3 py-1.5 text-xs bg-white/95 text-gray-600 rounded-full shadow-sm">
           地図には{MAP_MARKER_LIMIT}件まで表示しています。都道府県や距離で絞り込むと見やすくなります
