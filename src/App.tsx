@@ -11,7 +11,6 @@ import { Map } from './components/Map';
 import { FAQ } from './components/FAQ';
 import { PharmacyDetail } from './components/PharmacyDetail';
 import { MunicipalityChips } from './components/MunicipalityChips';
-import { PrefectureChips } from './components/PrefectureChips';
 import { OpenNowToggle } from './components/OpenNowToggle';
 import { FilterToggleButton } from './components/FilterToggleButton';
 import { SearchToggleButton } from './components/SearchToggleButton';
@@ -461,10 +460,6 @@ function App() {
                     autoFocus={searchOpen}
                   />
                 )}
-                <PrefectureChips
-                  counts={prefectureCounts}
-                  onSelect={handlePrefectureChange}
-                />
                 <ol className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-3 gap-1 text-center">
                   <li>
                     <p className="text-[#4AA8D9] text-xs font-medium">1</p>
