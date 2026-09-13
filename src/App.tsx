@@ -474,6 +474,11 @@ function App() {
                     <p className="text-xs text-gray-500">薬局で服用</p>
                   </li>
                 </ol>
+                <p className="mt-3 text-center">
+                  <a href="/guide.html" className="text-xs text-[#4AA8D9] hover:underline">
+                    はじめての方へ（絵で見る）
+                  </a>
+                </p>
               </div>
             )}
           </div>
