@@ -840,7 +840,7 @@ function App() {
             }}
           />
         ) : (
-          <div className="h-[60vh] min-h-[400px] bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="relative z-0 isolate h-[60vh] min-h-[400px] bg-white rounded-xl shadow-sm overflow-hidden">
             <Map
               pharmacies={pharmacies}
               userLocation={userLocation}
